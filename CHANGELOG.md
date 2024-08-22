@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/ubiquibot/automated-merging/compare/v1.0.0...v1.0.1) (2024-08-20)
+
+
+### Bug Fixes
+
+* fixed event manifest.json ([082bddd](https://github.com/ubiquibot/automated-merging/commit/082bddd7a8f3278d343c102b1fcdd7269ce5a91d))
+
 ## 1.0.0 (2024-07-29)
 
 
