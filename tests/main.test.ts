@@ -160,7 +160,10 @@ describe("Action tests", () => {
       http.get(
         "https://api.github.com/repos/:org/:repo/pulls/:id/reviews",
         () => {
-          return HttpResponse.json([{ id: 1, state: "COMMENTED", author_association: "CONTRIBUTOR" }, { id: 2, state: "APPROVED", author_association: "NONE" }]);
+          return HttpResponse.json([
+            { id: 1, state: "COMMENTED", author_association: "CONTRIBUTOR" },
+            { id: 2, state: "APPROVED", author_association: "NONE" },
+          ]);
         },
         { once: true }
       )
@@ -212,7 +215,6 @@ describe("Action tests", () => {
     const contributorMergeTimeout = "7 days";
     const collaboratorMergeTimeout = "3.5 days";
     const collaboratorMinimumApprovalsRequired = 2;
-    const contributorMinimumApprovalsRequired = 1;
     const context = {
       logger: {
         debug: console.log,
@@ -229,7 +231,6 @@ describe("Action tests", () => {
         },
         approvalsRequired: {
           collaborator: collaboratorMinimumApprovalsRequired,
-          contributor: contributorMinimumApprovalsRequired,
         },
         allowedReviewerRoles: ["COLLABORATOR", "MEMBER", "OWNER"],
       },
@@ -250,7 +251,6 @@ describe("Action tests", () => {
     );
     await expect(githubHelpers.getMergeTimeoutAndApprovalRequiredCount(context, "CONTRIBUTOR")).resolves.toEqual({
       mergeTimeout: contributorMergeTimeout,
-      requiredApprovalCount: contributorMinimumApprovalsRequired,
     });
   });
 

@@ -21,7 +21,6 @@ describe("Configuration tests", () => {
             settings: JSON.stringify({
               approvalsRequired: {
                 collaborator: 0,
-                contributor: 0,
               },
               mergeTimeout: {
                 collaborator: "3.5 days",
@@ -51,17 +50,6 @@ describe("Configuration tests", () => {
           path: "/approvalsRequired/collaborator",
           schema: {
             default: 1,
-            minimum: 1,
-            type: "number",
-          },
-          type: 39,
-          value: 0,
-        },
-        {
-          message: "Expected number to be greater or equal to 1",
-          path: "/approvalsRequired/contributor",
-          schema: {
-            default: 2,
             minimum: 1,
             type: "number",
           },

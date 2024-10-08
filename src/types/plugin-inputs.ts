@@ -18,11 +18,6 @@ export const approvalsRequiredSchema = T.Object(
      * merge, defaults to 1.
      */
     collaborator: T.Number({ default: 1, minimum: 1 }),
-    /**
-     * The amount of validations needed to consider a pull-request by a contributor to be deemed eligible for merge,
-     * defaults to 2.
-     */
-    contributor: T.Number({ default: 2, minimum: 1 }),
   },
   { default: {} }
 );

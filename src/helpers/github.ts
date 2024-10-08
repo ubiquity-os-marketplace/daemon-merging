@@ -33,7 +33,6 @@ export async function getMergeTimeoutAndApprovalRequiredCount(context: Context, 
   };
   const timeoutContributor = {
     mergeTimeout: mergeTimeout?.contributor,
-    requiredApprovalCount: approvalsRequired?.contributor,
   };
 
   /**
