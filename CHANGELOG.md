@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v1.0.1...v1.1.0) (2024-10-21)
+
+
+### Features
+
+* added configuration generation script ([910811d](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/910811df63ae916b2539eb016f87ed5694f57a27))
+* added schema validation workflow ([447f421](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/447f4215c8fffeb07e86f6c025f649ec1feb30e0))
+
+
+### Bug Fixes
+
+* filter reviews by approved author_association ([286f1b1](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/286f1b1fcc7da02a50f6c0caf1854870eee0f36d))
+
 ## [1.0.1](https://github.com/ubiquibot/automated-merging/compare/v1.0.0...v1.0.1) (2024-08-20)
 
 
