@@ -1,7 +1,7 @@
 {
   "name": "Daemon merging",
   "description": "Automatically merge pull-requests.",
-  "ubiquity:listeners": ["push", "issue_comment.created"],
+  "ubiquity:listeners": ["issues.assigned"],
   "configuration": {
     "type": "object",
     "properties": {
