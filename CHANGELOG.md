@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.0.0...v2.0.1) (2025-01-22)
+
+
+### Bug Fixes
+
+* bumped SDK and added bot event skip in manifest.json ([5a77cc5](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/5a77cc53c61062a83bf979b05c2b71d05e5ffba4))
+
 ## [2.0.0](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v1.2.0...v2.0.0) (2024-12-16)
 
 
