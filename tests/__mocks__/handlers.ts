@@ -13,7 +13,7 @@ export const handlers = [
     return HttpResponse.json({
       url: "https://api.github.com/repos/ubiquity-os-marketplace/daemon-merging/pulls/46",
       id: 1,
-      node_id: "PR_kwDOMQ8E8c6asmHR",
+      node_id: "PR_1",
       html_url: "https://github.com/ubiquity-os-marketplace/daemon-merging/pull/1",
       number: 1,
       state: "open",
