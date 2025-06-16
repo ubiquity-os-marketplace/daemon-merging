@@ -118,7 +118,7 @@ export async function updatePullRequests(context: Context) {
         });
         await removeEntryFromDatabase(context, {
           repo: context.payload.repository.name,
-          owner: `${context.payload.repository.owner}`,
+          owner: `${context.payload.repository.owner.login}`,
           issue_number: issueNumber,
         });
       } else {
