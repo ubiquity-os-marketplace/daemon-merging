@@ -142,6 +142,8 @@ export async function getOpenPullRequests(context: Context, targets: ReposWatchS
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
 
+  logger.info(`Fetching pull requests for repository ${owner}/${repo}`, { url: payload.repository.html_url });
+
   const isIgnored = targets.ignore.some((target) => {
     const parsedTarget = parseTarget(context, target);
     if (!parsedTarget) return false;

@@ -2,6 +2,7 @@ import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import { ReturnType } from "@sinclair/typebox";
 import ms from "ms";
 import db from "../cron/database-handler";
+import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
 import { Context, ReposWatchSettings } from "../types";
@@ -130,6 +131,7 @@ export async function updatePullRequests(context: Context) {
     results.push({ url: html_url, merged: isMerged });
   }
   await generateSummary(context, results);
+  await updateCronState(context);
 }
 
 async function attemptMerging(
