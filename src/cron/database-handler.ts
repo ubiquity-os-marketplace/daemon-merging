@@ -4,7 +4,6 @@ import path from "node:path";
 export const DB_FILE_NAME = "db.json";
 
 export interface DbComment {
-  commentId: number;
   issueNumber: number;
 }
 

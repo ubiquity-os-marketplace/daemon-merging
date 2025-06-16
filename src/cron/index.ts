@@ -42,23 +42,21 @@ async function main() {
       });
       const {
         data: { body = "" },
-      } = await repoOctokit.rest.issues.getComment({
+      } = await repoOctokit.rest.issues.get({
         owner,
         repo,
-        comment_id: comment.commentId,
         issue_number: comment.issueNumber,
       });
       const newBody = body + `\n<!-- daemon-merging update ${Date().toLocaleString()} -->`;
-      logger.info(`Updated comment ${comment.commentId}`, { newBody });
-      await repoOctokit.rest.issues.updateComment({
+      logger.info(`Updated body ${comment.issueNumber}`, { newBody });
+      await repoOctokit.rest.issues.update({
         owner,
         repo,
-        comment_id: comment.commentId,
         issue_number: comment.issueNumber,
         body: newBody,
       });
     } catch (e) {
-      logger.error("Failed to update the comment", { key, value, e });
+      logger.error("Failed to update the issue body", { key, value, e });
     }
   }
 }

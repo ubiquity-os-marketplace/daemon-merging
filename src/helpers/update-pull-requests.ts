@@ -1,5 +1,6 @@
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import ms from "ms";
+import db from "../cron/database-handler";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
 import { Context, ReposWatchSettings } from "../types";
@@ -27,8 +28,26 @@ function isIssueEvent(event: object): event is IssueEvent {
 }
 
 export async function updatePullRequests(context: Context) {
-  const { logger } = context;
+  const { logger, eventName, payload } = context;
   const results: ResultInfo[] = [];
+  const issueNumber = payload.issue.number;
+
+  if (eventName === "issues.assigned") {
+    await db.update((data) => {
+      const dbKey = `${context.payload.repository.owner?.login}/${context.payload.repository.name}`;
+      if (!data[dbKey]) {
+        data[dbKey] = [];
+      }
+      if (!data[dbKey].some((o) => o.issueNumber === issueNumber)) {
+        data[dbKey].push({
+          issueNumber: issueNumber,
+        });
+      }
+      return data;
+    });
+    logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url });
+    return;
+  }
 
   if (!context.config.repos?.monitor.length) {
     const owner = context.payload.repository.owner;
@@ -42,7 +61,14 @@ export async function updatePullRequests(context: Context) {
   const pullRequests = await getOpenPullRequests(context, context.config.repos as ReposWatchSettings);
 
   if (!pullRequests?.length) {
-    logger.info("Nothing to do.");
+    logger.info("Nothing to do, clearing entry from DB.");
+    await db.update((data) => {
+      const key = `${context.payload.repository.owner}/${context.payload.repository.name}`;
+      if (data[key]) {
+        data[key] = data[key].filter((o) => o.issueNumber !== issueNumber);
+      }
+      return data;
+    });
     return;
   }
 
