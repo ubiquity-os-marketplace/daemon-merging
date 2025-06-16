@@ -16,7 +16,7 @@
     "knip": "knip --config .github/knip.ts",
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
     "prepare": "husky install",
-    "start": "tsx src/action.ts",
+    "start": "bun --port 4000 --watch --no-clear-screen src/worker.ts",
     "test": "cross-env NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --setupFiles dotenv/config --coverage"
   },
   "keywords": [

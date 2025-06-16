@@ -18,15 +18,16 @@ import {
   Requirements,
 } from "./github";
 
-type IssueEvent = {
+type TimelineEvent = {
   created_at?: string;
   updated_at?: string;
   timestamp?: string;
   commented_at?: string;
+  submitted_at?: string;
 };
 
-function isIssueEvent(event: object): event is IssueEvent {
-  return "created_at" in event;
+function isTimelineEvent(event: object): event is TimelineEvent {
+  return "created_at" in event || "submitted_at" in event;
 }
 
 async function removeEntryFromDatabase(context: Context, issue: ReturnType<typeof parseGitHubUrl>) {
@@ -90,8 +91,8 @@ export async function updatePullRequests(context: Context) {
       }
       const activity = await getAllTimelineEvents(context, parseGitHubUrl(html_url));
       const eventDates: Date[] = activity.reduce<Date[]>((acc, event) => {
-        if (isIssueEvent(event)) {
-          const date = new Date(event.created_at || event.updated_at || event.timestamp || event.commented_at || "");
+        if (isTimelineEvent(event)) {
+          const date = new Date(event.created_at || event.updated_at || event.timestamp || event.commented_at || event.submitted_at || "");
           if (!isNaN(date.getTime())) {
             acc.push(date);
           }
