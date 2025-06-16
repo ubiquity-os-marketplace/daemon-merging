@@ -1,4 +1,5 @@
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
+import { ReturnType } from "@sinclair/typebox";
 import ms from "ms";
 import db from "../cron/database-handler";
 import { getAllTimelineEvents } from "../handlers/github-events";
@@ -25,6 +26,16 @@ type IssueEvent = {
 
 function isIssueEvent(event: object): event is IssueEvent {
   return "created_at" in event;
+}
+
+async function removeEntryFromDatabase(issue: ReturnType<typeof parseGitHubUrl>) {
+  await db.update((data) => {
+    const key = `${issue.owner}/${issue.repo}`;
+    if (data[key]) {
+      data[key] = data[key].filter((o) => o.issueNumber !== issue.issue_number);
+    }
+    return data;
+  });
 }
 
 export async function updatePullRequests(context: Context) {
@@ -109,6 +120,7 @@ export async function updatePullRequests(context: Context) {
           lastActivityDate,
           pullRequestDetails,
         });
+        await removeEntryFromDatabase({ repo: context.payload.repository.name, owner: `${context.payload.repository.owner}`, issue_number: issueNumber });
       } else {
         logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`);
       }
