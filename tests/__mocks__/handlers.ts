@@ -11,7 +11,7 @@ export const handlers = [
   }),
   http.get("https://api.github.com/repos/:org/:repo/pulls", () => {
     return HttpResponse.json({
-      url: "https://api.github.com/repos/ubiquity-os-marketplace/daemon-merging/pulls/46",
+      url: "https://api.github.com/repos/ubiquity-os-marketplace/daemon-merging/pulls/1",
       id: 1,
       node_id: "PR_1",
       html_url: "https://github.com/ubiquity-os-marketplace/daemon-merging/pull/1",
