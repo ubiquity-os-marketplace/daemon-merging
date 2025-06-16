@@ -48,4 +48,10 @@ export const handlers = [
   http.get("https://api.github.com/search/issues", () => {
     return HttpResponse.json(searchPullRequest);
   }),
+  http.put("https://api.github.com/repos/:owner/:repo/actions/workflows/:workflow/disable", () => {
+    return HttpResponse.json();
+  }),
+  http.put("https://api.github.com/repos/:owner/:repo/actions/workflows/:workflow/enable", () => {
+    return HttpResponse.json();
+  }),
 ];
