@@ -16,6 +16,9 @@ async function main() {
   });
 
   const fileContent = db.data;
+  logger.info(`Loaded DB data.`, {
+    data: JSON.stringify(fileContent, null, 2),
+  });
   for (const [key, value] of Object.entries(fileContent)) {
     try {
       logger.info(`Triggering update`, {
