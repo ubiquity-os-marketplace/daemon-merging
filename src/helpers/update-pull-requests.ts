@@ -61,15 +61,6 @@ export async function updatePullRequests(context: Context) {
     return;
   }
 
-  // if (!context.config.repos?.monitor.length) {
-  //   const owner = context.payload.repository.owner;
-  //   if (owner) {
-  //     logger.info(`No organizations or repo have been specified, will default to the organization owner: ${owner.login}.`);
-  //   } else {
-  //     throw logger.error("Could not set a default organization to watch, skipping.");
-  //   }
-  // }
-
   const pullRequests = await getOpenPullRequests(context, context.config.repos as ReposWatchSettings);
 
   if (!pullRequests?.length) {

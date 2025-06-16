@@ -166,7 +166,6 @@ export async function getOpenPullRequests(context: Context, targets: ReposWatchS
   }
 
   try {
-    logger.debug(`Getting open pull requests for repo: ${owner}/${repo}`);
     const data = await octokit.paginate(octokit.rest.pulls.list, {
       owner,
       repo,

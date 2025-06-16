@@ -9,6 +9,18 @@ export const handlers = [
   http.post("https://api.github.com/repos/login,ubiquibot//dispatches", () => {
     return HttpResponse.json();
   }),
+  http.get("https://api.github.com/repos/:org/:repo/pulls", () => {
+    return HttpResponse.json({
+      url: "https://api.github.com/repos/ubiquity-os-marketplace/daemon-merging/pulls/46",
+      id: 1,
+      node_id: "PR_kwDOMQ8E8c6asmHR",
+      html_url: "https://github.com/ubiquity-os-marketplace/daemon-merging/pull/1",
+      number: 1,
+      state: "open",
+      locked: false,
+      title: "fix: cron merging",
+    });
+  }),
   http.get("https://api.github.com/repos/:org/:repo/pulls/:id/merge", () => {
     return HttpResponse.json();
   }),
