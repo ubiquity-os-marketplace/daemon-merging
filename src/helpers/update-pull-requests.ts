@@ -29,7 +29,10 @@ function isIssueEvent(event: object): event is IssueEvent {
   return "created_at" in event;
 }
 
-async function removeEntryFromDatabase(issue: ReturnType<typeof parseGitHubUrl>) {
+async function removeEntryFromDatabase(context: Context, issue: ReturnType<typeof parseGitHubUrl>) {
+  context.logger.info(`Removing entry from DB for issue`, {
+    issue,
+  });
   await db.update((data) => {
     const key = `${issue.owner}/${issue.repo}`;
     if (data[key]) {
@@ -112,7 +115,11 @@ export async function updatePullRequests(context: Context) {
           lastActivityDate,
           pullRequestDetails,
         });
-        await removeEntryFromDatabase({ repo: context.payload.repository.name, owner: `${context.payload.repository.owner}`, issue_number: issueNumber });
+        await removeEntryFromDatabase(context, {
+          repo: context.payload.repository.name,
+          owner: `${context.payload.repository.owner}`,
+          issue_number: issueNumber,
+        });
       } else {
         logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`);
       }
