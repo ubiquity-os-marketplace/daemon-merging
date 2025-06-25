@@ -1,5 +1,8 @@
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
+import { ReturnType } from "@sinclair/typebox";
 import ms from "ms";
+import db from "../cron/database-handler";
+import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
 import { Context, ReposWatchSettings } from "../types";
@@ -15,34 +18,64 @@ import {
   Requirements,
 } from "./github";
 
-type IssueEvent = {
+type TimelineEvent = {
   created_at?: string;
   updated_at?: string;
   timestamp?: string;
   commented_at?: string;
+  submitted_at?: string;
 };
 
-function isIssueEvent(event: object): event is IssueEvent {
-  return "created_at" in event;
+function isTimelineEvent(event: object): event is TimelineEvent {
+  return "created_at" in event || "submitted_at" in event;
+}
+
+async function removeEntryFromDatabase(context: Context, issue: ReturnType<typeof parseGitHubUrl>) {
+  context.logger.info(`Removing entry from DB for issue`, {
+    issue,
+  });
+  await db.update((data) => {
+    const key = `${issue.owner}/${issue.repo}`;
+    if (data[key]) {
+      data[key] = data[key].filter((o) => o.issueNumber !== issue.issue_number);
+    }
+    return data;
+  });
 }
 
 export async function updatePullRequests(context: Context) {
-  const { logger } = context;
+  const { logger, eventName, payload } = context;
   const results: ResultInfo[] = [];
+  const issueNumber = payload.issue.number;
 
-  if (!context.config.repos?.monitor.length) {
-    const owner = context.payload.repository.owner;
-    if (owner) {
-      logger.info(`No organizations or repo have been specified, will default to the organization owner: ${owner.login}.`);
-    } else {
-      throw logger.error("Could not set a default organization to watch, skipping.");
-    }
+  if (eventName === "issues.assigned") {
+    await db.update((data) => {
+      const dbKey = `${context.payload.repository.owner?.login}/${context.payload.repository.name}`;
+      if (!data[dbKey]) {
+        data[dbKey] = [];
+      }
+      if (!data[dbKey].some((o) => o.issueNumber === issueNumber)) {
+        data[dbKey].push({
+          issueNumber: issueNumber,
+        });
+      }
+      return data;
+    });
+    logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url });
+    return;
   }
 
   const pullRequests = await getOpenPullRequests(context, context.config.repos as ReposWatchSettings);
 
   if (!pullRequests?.length) {
-    logger.info("Nothing to do.");
+    logger.info("Nothing to do, clearing entry from DB.");
+    await db.update((data) => {
+      const key = `${context.payload.repository.owner}/${context.payload.repository.name}`;
+      if (data[key]) {
+        data[key] = data[key].filter((o) => o.issueNumber !== issueNumber);
+      }
+      return data;
+    });
     return;
   }
 
@@ -58,8 +91,8 @@ export async function updatePullRequests(context: Context) {
       }
       const activity = await getAllTimelineEvents(context, parseGitHubUrl(html_url));
       const eventDates: Date[] = activity.reduce<Date[]>((acc, event) => {
-        if (isIssueEvent(event)) {
-          const date = new Date(event.created_at || event.updated_at || event.timestamp || event.commented_at || "");
+        if (isTimelineEvent(event)) {
+          const date = new Date(event.created_at || event.updated_at || event.timestamp || event.commented_at || event.submitted_at || "");
           if (!isNaN(date.getTime())) {
             acc.push(date);
           }
@@ -83,6 +116,11 @@ export async function updatePullRequests(context: Context) {
           lastActivityDate,
           pullRequestDetails,
         });
+        await removeEntryFromDatabase(context, {
+          repo: context.payload.repository.name,
+          owner: `${context.payload.repository.owner.login}`,
+          issue_number: issueNumber,
+        });
       } else {
         logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`);
       }
@@ -92,6 +130,7 @@ export async function updatePullRequests(context: Context) {
     results.push({ url: html_url, merged: isMerged });
   }
   await generateSummary(context, results);
+  await updateCronState(context);
 }
 
 async function attemptMerging(

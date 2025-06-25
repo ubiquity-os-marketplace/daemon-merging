@@ -1,4 +1,4 @@
-# `@ubiquibot/automated-merging`
+# `@ubiquity-os/daemon-merging`
 
 Automatically merge pull-requests based on the reviewer count, the time elapsed since the last activity, depending
 on the association of the pull-request author.
@@ -6,10 +6,7 @@ on the association of the pull-request author.
 ## Configuration example
 
 ```yml
-- plugin: ubiquibot/automated-merging
-  name: automated-merging
-  id: automated-merging
-  description: "Automatically merge pull-requests."
+- plugin: ubiquity-os-marketplace/daemon-merging
   with:
     approvalsRequired:
       collaborator: 1 # defaults to 1
@@ -18,15 +15,14 @@ on the association of the pull-request author.
       collaborator: "3.5 days" # defaults to 3.5 days
       contributor: "7 days" # defaults to 7 days
     repos:
-      monitor: ["ubiquibot/automated-merging"]
-      ignore: ["ubiquibot/automated-merging"]
+      ignore: ["ubiquity-os-marketplace/daemon-merging"]
     allowedReviewerRoles: ["COLLABORATOR", "MEMBER", "OWNER"]
 ```
 
 ## Testing
 
 ```shell
-bun test
+bun run test
 ```
 
 ## Technical Architecture
@@ -34,19 +30,23 @@ bun test
 ### System Components
 
 #### GitHub Action Integration
+
 - Built on TypeScript with strict type checking
 - Integrates with GitHub's Actions runtime environment
 - Processes webhooks for 'push' and 'issue_comment.created' events
 - Manages PR lifecycle through GitHub's REST API
 
 #### Plugin System
+
 The core logic is implemented as a plugin system that:
+
 - Evaluates PRs against configurable rules
 - Manages approval workflows
 - Handles state transitions
 - Processes merge operations
 
 #### Event Processing
+
 - **GitHub Events Handler**: Processes incoming webhooks for:
   - Push events (for base branch updates)
   - Issue comment events (for approval tracking)
@@ -58,7 +58,9 @@ The core logic is implemented as a plugin system that:
 ### Configuration System
 
 #### Approval Requirements
+
 Configurable thresholds based on contributor status:
+
 ```typescript
 approvalsRequired: {
   collaborator: number; // Default: 1
@@ -67,7 +69,9 @@ approvalsRequired: {
 ```
 
 #### Merge Timeouts
+
 Customizable waiting periods:
+
 ```typescript
 mergeTimeout: {
   collaborator: string; // Default: "3.5 days"
@@ -76,7 +80,9 @@ mergeTimeout: {
 ```
 
 #### Repository Monitoring
+
 Fine-grained repository control:
+
 ```typescript
 repos: {
   monitor: string[]; // Repositories to watch
@@ -85,7 +91,9 @@ repos: {
 ```
 
 #### Reviewer Roles
+
 Role-based access control:
+
 ```typescript
 allowedReviewerRoles: string[]; // Default: ["COLLABORATOR", "MEMBER", "OWNER"]
 ```
@@ -102,11 +110,13 @@ The project uses a comprehensive type system built on TypeScript:
 ### Runtime Environment
 
 #### Development
+
 - Bun for testing and development
 - TypeScript with strict mode
 - Jest for testing framework
 
 #### Production
+
 - Runs in GitHub Actions environment
 - Node.js compatibility mode
 - TypeBox for runtime type validation
@@ -114,20 +124,24 @@ The project uses a comprehensive type system built on TypeScript:
 ### Data Flow
 
 1. **Event Reception**
+
    - GitHub webhook triggers Action
    - Event type and payload validated
 
 2. **Configuration Loading**
+
    - Settings loaded from yml config
    - Environment variables processed
    - Type validation performed
 
 3. **PR Evaluation**
+
    - Author association checked
    - Review counts tallied
    - Time thresholds evaluated
 
 4. **Merge Processing**
+
    - Conditions verified
    - Merge operation executed
    - Status updated

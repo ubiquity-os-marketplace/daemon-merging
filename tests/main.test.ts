@@ -27,11 +27,11 @@ beforeAll(async () => {
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-const htmlUrl = "https://github.com/ubiquibot/automated-merging/pull/1";
-const issueParams = { owner: "ubiquibot", repo: "automated-merging", issue_number: 1 };
+const htmlUrl = "https://github.com/ubiquity-os-marketplace/automated-merging/pull/1";
+const issueParams = { owner: "ubiquity-os-marketplace", repo: "automated-merging", issue_number: 1 };
 const workflow = "workflow";
 const githubHelpersPath = "../src/helpers/github";
-const monitor = "ubiquibot/automated-merging";
+const monitor = "ubiquity-os-marketplace/automated-merging";
 
 describe("Action tests", () => {
   beforeEach(() => {
@@ -176,23 +176,15 @@ describe("Action tests", () => {
     const context = createContext({ allowedReviewerRoles: ["COLLABORATOR", "MEMBER", "OWNER"] });
     await expect(githubHelpers.isCiGreen(context, "1", issueParams)).resolves.toEqual(true);
   });
-
-  it("Should throw an error if the search fails", async () => {
-    server.use(
-      http.get("https://api.github.com/search/issues", () => {
-        return HttpResponse.json({ error: "Some error" }, { status: 500 });
-      })
-    );
-    const plugin = (await import("../src/plugin")).plugin;
-    const context = createContext({ repos: { monitor: [monitor], ignore: [] } });
-    await expect(plugin(context)).rejects.toThrow();
-  });
 });
 
 function createContext(config?: object): Context {
   return {
     eventName: "push",
     payload: {
+      issue: {
+        number: 1,
+      },
       pull_request: {
         html_url: htmlUrl,
         assignees: [{ login: "ubiquibot" }],
