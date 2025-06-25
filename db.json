@@ -3,5 +3,10 @@
     {
       "issueNumber": 357
     }
+  ],
+  "ubiquity-os-marketplace/command-config": [
+    {
+      "issueNumber": 13
+    }
   ]
 }
