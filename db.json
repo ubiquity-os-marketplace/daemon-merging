@@ -16,5 +16,10 @@
     {
       "issueNumber": 169
     }
+  ],
+  "ubiquity-os-marketplace/text-vector-embeddings": [
+    {
+      "issueNumber": 98
+    }
   ]
 }
