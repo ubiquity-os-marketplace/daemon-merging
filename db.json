@@ -34,5 +34,10 @@
     {
       "issueNumber": 87
     }
+  ],
+  "ubiquity-os/ubiquity-os-kernel": [
+    {
+      "issueNumber": 282
+    }
   ]
 }
