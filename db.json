@@ -29,5 +29,10 @@
     {
       "issueNumber": 92
     }
+  ],
+  "ubiquity-os/plugin-sdk": [
+    {
+      "issueNumber": 87
+    }
   ]
 }
