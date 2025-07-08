@@ -45,5 +45,10 @@
     {
       "issueNumber": 281
     }
+  ],
+  "ubiquity-os-marketplace/daemon-merging": [
+    {
+      "issueNumber": 48
+    }
   ]
 }
