@@ -1,3 +1,6 @@
+import { createAppAuth } from "@octokit/auth-app";
+import { Octokit } from "@octokit/rest";
+import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Context } from "../types";
 import db from "./database-handler";
 
@@ -18,18 +21,42 @@ export async function updateCronState(context: Context) {
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
 
-  // should use the repo auth
   try {
+    const appOctokit = new customOctokit({
+      authStrategy: createAppAuth,
+      auth: {
+        appId: process.env.APP_ID,
+        privateKey: process.env.APP_PRIVATE_KEY,
+      },
+    });
+    let authOctokit;
+    if (!process.env.APP_ID || !process.env.APP_PRIVATE_KEY) {
+      context.logger.debug("APP_ID or APP_PRIVATE_KEY are missing from the env, will use the default Octokit instance.");
+      authOctokit = context.octokit;
+    } else {
+      const installation = await appOctokit.rest.apps.getRepoInstallation({
+        owner,
+        repo,
+      });
+      authOctokit = new Octokit({
+        authStrategy: createAppAuth,
+        auth: {
+          appId: process.env.APP_ID,
+          privateKey: process.env.APP_PRIVATE_KEY,
+          installationId: installation.data.id,
+        },
+      });
+    }
     if (Object.keys(db.data).length) {
       context.logger.verbose("Enabling cron.yml workflow.", { owner, repo });
-      await context.octokit.rest.actions.enableWorkflow({
+      await authOctokit.rest.actions.enableWorkflow({
         owner,
         repo,
         workflow_id: "cron.yml",
       });
     } else {
       context.logger.verbose("Disabling cron.yml workflow.");
-      await context.octokit.rest.actions.disableWorkflow({
+      await authOctokit.rest.actions.disableWorkflow({
         owner,
         repo,
         workflow_id: "cron.yml",
