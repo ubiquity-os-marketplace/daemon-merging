@@ -18,19 +18,26 @@ export async function updateCronState(context: Context) {
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
 
-  if (Object.keys(db.data).length) {
-    context.logger.verbose("Enabling cron.yml workflow.");
-    await context.octokit.rest.actions.enableWorkflow({
-      owner,
-      repo,
-      workflow_id: "cron.yml",
-    });
-  } else {
-    context.logger.verbose("Disabling cron.yml workflow.");
-    await context.octokit.rest.actions.disableWorkflow({
-      owner,
-      repo,
-      workflow_id: "cron.yml",
+  // should use the repo auth
+  try {
+    if (Object.keys(db.data).length) {
+      context.logger.verbose("Enabling cron.yml workflow.", { owner, repo });
+      await context.octokit.rest.actions.enableWorkflow({
+        owner,
+        repo,
+        workflow_id: "cron.yml",
+      });
+    } else {
+      context.logger.verbose("Disabling cron.yml workflow.");
+      await context.octokit.rest.actions.disableWorkflow({
+        owner,
+        repo,
+        workflow_id: "cron.yml",
+      });
+    }
+  } catch (e) {
+    context.logger.error("Could not enable / disable the CRON workflow.", {
+      e,
     });
   }
 }
