@@ -5,6 +5,7 @@ import { Context } from "../types";
 import db from "./database-handler";
 
 export async function updateCronState(context: Context) {
+  context.logger.debug("Updating the cron.yml workflow state.");
   await db.update((data) => {
     for (const key of Object.keys(data)) {
       if (!data[key].length) {
