@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'development' }}
+    env:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -39,11 +42,9 @@ jobs:
           KERNEL_PUBLIC_KEY: ${{ secrets.KERNEL_PUBLIC_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLUGIN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APP_ID: ${{ secrets.APP_ID }}
-          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Get GitHub App token
-        if: secrets.APP_ID != '' && secrets.APP_PRIVATE_KEY != ''
+        if: env.APP_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
