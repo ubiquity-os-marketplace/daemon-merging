@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.0](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.0.1...v2.1.0) (2025-07-10)
+
+
+### Features
+
+* used ubiquity's knip-reporter ([e7710f4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/e7710f4195b2116f530934bff3d66717f770c410))
+* used ubiquity's knip-reporter ([cc77be6](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/cc77be6e1d4196b0514fc5f5848c0aeb01426a64))
+
+
+### Bug Fixes
+
+* cron merging ([8704a8d](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/8704a8d2c284e655afa2318d2dd7552c346f62a1))
+* the App ID and the App private key are properly used on authentication ([50fae48](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/50fae483505665dde33702d3d6e5f216124714a8))
+* the octokit instanced used for the workflow management is from the target repo ([2301d4f](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/2301d4f6b7dce669ab30074c9e82297b513ef78e))
+* workflow enable / disable with proper credentials ([7bb6a84](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/7bb6a84d61c16b705eed0c551c4e43d49eebbf58))
+* workflow for CRON and watch issues ([b1fa6a1](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/b1fa6a1a5745e552191f7e764484dd268061f102))
+
 ## [2.0.1](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.0.0...v2.0.1) (2025-01-22)
 
 
