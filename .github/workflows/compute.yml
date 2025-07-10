@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'development' }}
+    env:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -39,3 +42,23 @@ jobs:
           KERNEL_PUBLIC_KEY: ${{ secrets.KERNEL_PUBLIC_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLUGIN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+
+      - name: Get GitHub App token
+        if: env.APP_ID != '' && env.APP_PRIVATE_KEY != ''
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ env.APP_ID }}
+          private-key: ${{ env.APP_PRIVATE_KEY }}
+
+      - name: Commit updated DB
+        uses: swinton/commit@v2.x
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+        with:
+          files: |
+            db.json
+          commit-message: "chore: [skip ci] update db.json"
+          # We save it to the default branch since CRON cannot access any other branch
+          ref: ${{ github.event.repository.default_branch }}

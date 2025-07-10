@@ -9,6 +9,18 @@ export const handlers = [
   http.post("https://api.github.com/repos/login,ubiquibot//dispatches", () => {
     return HttpResponse.json();
   }),
+  http.get("https://api.github.com/repos/:org/:repo/pulls", () => {
+    return HttpResponse.json({
+      url: "https://api.github.com/repos/ubiquity-os-marketplace/daemon-merging/pulls/1",
+      id: 1,
+      node_id: "PR_1",
+      html_url: "https://github.com/ubiquity-os-marketplace/daemon-merging/pull/1",
+      number: 1,
+      state: "open",
+      locked: false,
+      title: "fix: cron merging",
+    });
+  }),
   http.get("https://api.github.com/repos/:org/:repo/pulls/:id/merge", () => {
     return HttpResponse.json();
   }),
@@ -35,5 +47,11 @@ export const handlers = [
   }),
   http.get("https://api.github.com/search/issues", () => {
     return HttpResponse.json(searchPullRequest);
+  }),
+  http.put("https://api.github.com/repos/:owner/:repo/actions/workflows/:workflow/disable", () => {
+    return HttpResponse.json();
+  }),
+  http.put("https://api.github.com/repos/:owner/:repo/actions/workflows/:workflow/enable", () => {
+    return HttpResponse.json();
   }),
 ];

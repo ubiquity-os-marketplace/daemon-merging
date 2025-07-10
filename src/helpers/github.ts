@@ -133,37 +133,47 @@ function parseTarget({ payload, logger }: Context, target: string) {
  * https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-only-issues-or-pull-requests
  */
 export async function getOpenPullRequests(context: Context, targets: ReposWatchSettings) {
-  const { octokit, logger } = context;
-  // If no repo to monitor is set, defaults to the organization
-  const monitor = [...targets.monitor];
-  const filter = [
-    ...monitor.reduce<string[]>((acc, curr) => {
-      const parsedTarget = parseTarget(context, curr);
-      if (parsedTarget) {
-        return [...acc, parsedTarget.repo ? `repo:${parsedTarget.org}/${parsedTarget.repo}` : `org:${parsedTarget.org}`];
-      }
-      return acc;
-    }, []),
-    ...targets.ignore.reduce<string[]>((acc, curr) => {
-      const parsedTarget = parseTarget(context, curr);
-      if (parsedTarget) {
-        return [...acc, parsedTarget.repo ? `-repo:${parsedTarget.org}/${parsedTarget.repo}` : `-org:${parsedTarget.org}`];
-      }
-      return acc;
-    }, []),
-  ];
-  if (!monitor.length) {
-    filter.push(`org:${context.payload.repository.owner?.login}`);
+  const { octokit, logger, payload } = context;
+
+  if (!payload.repository?.owner?.login || !payload.repository?.name) {
+    throw new Error("Repository owner or name not found in payload");
   }
-  try {
-    const query = `is:pr is:open draft:false ${filter.join(" ")}`;
-    logger.debug(`Querying GitHub Search with query: ${query}`);
-    const data = await octokit.paginate(octokit.rest.search.issuesAndPullRequests, {
-      q: query,
+
+  const owner = payload.repository.owner.login;
+  const repo = payload.repository.name;
+
+  logger.info(`Fetching pull requests for repository ${owner}/${repo}`, { url: payload.repository.html_url });
+
+  const isIgnored = targets.ignore.some((target) => {
+    const parsedTarget = parseTarget(context, target);
+    if (!parsedTarget) return false;
+
+    // Check if it matches org-level ignore
+    if (!parsedTarget.repo && parsedTarget.org === owner) {
+      return true;
+    }
+    // Check if it matches repo-level ignore
+    return !!(parsedTarget.repo && parsedTarget.org === owner && parsedTarget.repo === repo);
+  });
+
+  if (isIgnored) {
+    logger.warn(`Repository ${owner}/${repo} is in ignore list, skipping`, {
+      ignore: targets.ignore,
+      owner,
+      repo,
     });
-    return data.flat();
+    return [];
+  }
+
+  try {
+    const data = await octokit.paginate(octokit.rest.pulls.list, {
+      owner,
+      repo,
+      state: "open",
+    });
+    return data.filter((pr) => !pr.draft);
   } catch (e) {
-    logger.error(`Error getting open pull-requests for targets: [${filter.join(", ")}]. ${e}`);
+    logger.error(`Error getting open pull-requests for repo: ${owner}/${repo}. ${e}`);
     throw e;
   }
 }
