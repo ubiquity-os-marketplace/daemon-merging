@@ -122,7 +122,10 @@ export async function updatePullRequests(context: Context) {
           issue_number: issueNumber,
         });
       } else {
-        logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`);
+        logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`, {
+          lastActivityDate,
+          mergeTimeout: requirements?.mergeTimeout,
+        });
       }
     } catch (e) {
       logger.error(`Could not process pull-request ${html_url} for auto-merge: ${e}`);
