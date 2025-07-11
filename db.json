@@ -50,5 +50,10 @@
     {
       "issueNumber": 48
     }
+  ],
+  "ubiquity-os-marketplace/command-ask": [
+    {
+      "issueNumber": 87
+    }
   ]
 }
