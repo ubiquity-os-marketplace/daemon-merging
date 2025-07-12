@@ -24,6 +24,9 @@
   "ubiquity-os-marketplace/command-start-stop": [
     {
       "issueNumber": 169
+    },
+    {
+      "issueNumber": 172
     }
   ],
   "ubiquity-os-marketplace/text-vector-embeddings": [
