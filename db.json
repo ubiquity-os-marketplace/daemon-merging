@@ -53,10 +53,5 @@
     {
       "issueNumber": 48
     }
-  ],
-  "ubiquity/permit2-rpc-manager": [
-    {
-      "issueNumber": 6
-    }
   ]
 }
