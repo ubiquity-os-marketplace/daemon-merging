@@ -53,5 +53,10 @@
     {
       "issueNumber": 48
     }
+  ],
+  "ubiquity-os-marketplace/daemon-pull-review": [
+    {
+      "issueNumber": 30
+    }
   ]
 }
