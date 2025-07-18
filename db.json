@@ -42,6 +42,9 @@
   "ubiquity-os/plugin-sdk": [
     {
       "issueNumber": 87
+    },
+    {
+      "issueNumber": 101
     }
   ],
   "ubiquity-os/ubiquity-os-kernel": [
