@@ -29,12 +29,6 @@
   "ubiquity-os-marketplace/text-vector-embeddings": [
     {
       "issueNumber": 98
-    },
-    {
-      "issueNumber": 103
-    },
-    {
-      "issueNumber": 95
     }
   ],
   "ubiquity-os-marketplace/daemon-disqualifier": [
@@ -45,24 +39,19 @@
   "ubiquity-os/plugin-sdk": [
     {
       "issueNumber": 87
-    },
-    {
-      "issueNumber": 101
     }
   ],
   "ubiquity-os/ubiquity-os-kernel": [
     {
       "issueNumber": 282
+    },
+    {
+      "issueNumber": 281
     }
   ],
   "ubiquity-os-marketplace/daemon-merging": [
     {
       "issueNumber": 48
-    }
-  ],
-  "ubiquity-os-marketplace/daemon-pull-review": [
-    {
-      "issueNumber": 30
     }
   ]
 }
