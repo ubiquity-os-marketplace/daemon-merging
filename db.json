@@ -51,9 +51,9 @@
       "issueNumber": 48
     }
   ],
-  "ubiquity-os/action-deploy-plugin": [
+  "ubiquity-os/deno-deploy": [
     {
-      "issueNumber": 21
+      "issueNumber": 13
     }
   ]
 }
