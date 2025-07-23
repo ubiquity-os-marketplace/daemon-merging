@@ -53,5 +53,10 @@
     {
       "issueNumber": 48
     }
+  ],
+  "ubiquity/cloudflare-deploy-action": [
+    {
+      "issueNumber": 31
+    }
   ]
 }
