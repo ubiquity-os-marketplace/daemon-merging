@@ -44,16 +44,14 @@
   "ubiquity-os/ubiquity-os-kernel": [
     {
       "issueNumber": 282
+    },
+    {
+      "issueNumber": 281
     }
   ],
   "ubiquity-os-marketplace/daemon-merging": [
     {
       "issueNumber": 48
-    }
-  ],
-  "ubiquity-os/deno-deploy": [
-    {
-      "issueNumber": 13
     }
   ]
 }
