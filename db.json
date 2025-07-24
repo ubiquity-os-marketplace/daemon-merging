@@ -19,6 +19,9 @@
   "ubiquity-os-marketplace/command-config": [
     {
       "issueNumber": 13
+    },
+    {
+      "issueNumber": 16
     }
   ],
   "ubiquity-os-marketplace/command-start-stop": [
