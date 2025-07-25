@@ -19,9 +19,6 @@
   "ubiquity-os-marketplace/command-config": [
     {
       "issueNumber": 13
-    },
-    {
-      "issueNumber": 16
     }
   ],
   "ubiquity-os-marketplace/command-start-stop": [
@@ -47,11 +44,19 @@
   "ubiquity-os/ubiquity-os-kernel": [
     {
       "issueNumber": 282
+    },
+    {
+      "issueNumber": 281
     }
   ],
   "ubiquity-os-marketplace/daemon-merging": [
     {
       "issueNumber": 48
+    }
+  ],
+  "ubiquity/demo.ubq.fi": [
+    {
+      "issueNumber": 9
     }
   ]
 }
