@@ -61,5 +61,10 @@
     {
       "issueNumber": 9
     }
+  ],
+  "ubiquity-os-marketplace/daemon-pricing": [
+    {
+      "issueNumber": 125
+    }
   ]
 }
