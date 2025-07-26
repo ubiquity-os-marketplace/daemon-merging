@@ -2,7 +2,7 @@ import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
-import { createKvAdapter } from "../adapters/kv-adapter";
+import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
 
 async function main() {
   const logger = new Logs(process.env.LOG_LEVEL ?? "info");
@@ -15,7 +15,7 @@ async function main() {
     },
   });
 
-  const kvAdapter = await createKvAdapter();
+  const kvAdapter = await createKvDatabaseHandler();
   const repositories = await kvAdapter.getAllRepositories();
 
   logger.info(`Loaded DB data.`, {

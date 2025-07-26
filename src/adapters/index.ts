@@ -1,5 +1,4 @@
-import { createKvAdapter } from "./kv-adapter";
-import { KvDatabaseHandler } from "./kv-database-handler";
+import { KvDatabaseHandler, createKvDatabaseHandler } from "./kv-database-handler";
 
 export interface Adapters {
   kv: KvDatabaseHandler;
@@ -7,6 +6,6 @@ export interface Adapters {
 
 export async function createAdapters(): Promise<Adapters> {
   return {
-    kv: await createKvAdapter(),
+    kv: await createKvDatabaseHandler(),
   };
 }
