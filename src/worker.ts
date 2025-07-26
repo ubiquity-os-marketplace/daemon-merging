@@ -2,7 +2,7 @@ import { createPlugin } from "@ubiquity-os/plugin-sdk";
 import { Manifest } from "@ubiquity-os/plugin-sdk/dist/manifest";
 import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
 import manifest from "../manifest.json";
-import { createAdapters } from "./adapters";
+import { createAdapters } from "./adapters/index";
 import { plugin } from "./plugin";
 import { Context, Env, envSchema, SupportedEvents } from "./types";
 import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
