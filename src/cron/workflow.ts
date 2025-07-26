@@ -5,7 +5,6 @@ import { Context } from "../types";
 
 export async function updateCronState(context: Context) {
   context.logger.debug("Updating the cron.yml workflow state.");
-  // No need to clean empty entries with KV - they're handled automatically
 
   if (!process.env.GITHUB_REPOSITORY) {
     context.logger.error("Can't update the Action Workflow state as GITHUB_REPOSITORY is missing from the env.");

@@ -9,7 +9,6 @@ import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
 
 const app = createPlugin<PluginSettings, Env, null, SupportedEvents>(
   async (context) => {
-    // Create adapters and add them to context
     const adapters = await createAdapters();
     const contextWithAdapters = { ...context, adapters } as Context;
     return plugin(contextWithAdapters);

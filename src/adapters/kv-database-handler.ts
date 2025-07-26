@@ -82,10 +82,6 @@ export class KvDatabaseHandler {
 }
 
 export async function createKvDatabaseHandler(): Promise<KvDatabaseHandler> {
-  if (typeof Deno !== "undefined") {
-    const kv = await Deno.openKv(process.env.DENO_KV_URL);
-    return new KvDatabaseHandler(kv);
-  }
-
-  throw new Error("KV storage is only available in Deno environments");
+  const kv = await Deno.openKv(process.env.DENO_KV_URL);
+  return new KvDatabaseHandler(kv);
 }
