@@ -2,7 +2,7 @@ import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
-import db from "./database-handler";
+import { createKvAdapter } from "../adapters/kv-adapter";
 
 async function main() {
   const logger = new Logs(process.env.LOG_LEVEL ?? "info");
@@ -15,26 +15,30 @@ async function main() {
     },
   });
 
-  const fileContent = db.data;
+  const kvAdapter = await createKvAdapter();
+  const repositories = await kvAdapter.getAllRepositories();
+
   logger.info(`Loaded DB data.`, {
-    data: JSON.stringify(fileContent, null, 2),
+    data: JSON.stringify(repositories, null, 2),
   });
-  for (const [key, value] of Object.entries(fileContent)) {
+
+  for (const repository of repositories) {
     try {
       logger.info(`Triggering update`, {
-        key,
-        value,
+        repository,
       });
-      const [owner, repo] = key.split("/");
+      const { owner, repo, issueNumbers } = repository;
       const installation = await octokit.rest.apps.getRepoInstallation({
         owner,
         repo,
       });
-      const comment = value.pop();
-      if (!comment) {
-        logger.error(`No comment was found for repository ${key}`);
+
+      const issueNumber = issueNumbers[issueNumbers.length - 1];
+      if (!issueNumber) {
+        logger.error(`No issue numbers found for repository ${owner}/${repo}`);
         continue;
       }
+
       const repoOctokit = new customOctokit({
         authStrategy: createAppAuth,
         auth: {
@@ -48,18 +52,18 @@ async function main() {
       } = await repoOctokit.rest.issues.get({
         owner,
         repo,
-        issue_number: comment.issueNumber,
+        issue_number: issueNumber,
       });
       const newBody = body + `\n<!-- daemon-merging update ${Date().toLocaleString()} -->`;
-      logger.info(`Updated body ${comment.issueNumber}`, { newBody });
+      logger.info(`Updated body ${issueNumber}`, { newBody });
       await repoOctokit.rest.issues.update({
         owner,
         repo,
-        issue_number: comment.issueNumber,
+        issue_number: issueNumber,
         body: newBody,
       });
     } catch (e) {
-      logger.error("Failed to update the issue body", { key, value, e });
+      logger.error("Failed to update the issue body", { repository, e });
     }
   }
 }

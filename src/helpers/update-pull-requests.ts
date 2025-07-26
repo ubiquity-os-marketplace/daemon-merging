@@ -1,7 +1,5 @@
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
-import { ReturnType } from "@sinclair/typebox";
 import ms from "ms";
-import db from "../cron/database-handler";
 import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
@@ -34,13 +32,7 @@ async function removeEntryFromDatabase(context: Context, issue: ReturnType<typeo
   context.logger.info(`Removing entry from DB for issue`, {
     issue,
   });
-  await db.update((data) => {
-    const key = `${issue.owner}/${issue.repo}`;
-    if (data[key]) {
-      data[key] = data[key].filter((o) => o.issueNumber !== issue.issue_number);
-    }
-    return data;
-  });
+  await context.adapters.kv.removeIssueByNumber(issue.owner, issue.repo, issue.issue_number);
 }
 
 export async function updatePullRequests(context: Context) {
@@ -49,18 +41,7 @@ export async function updatePullRequests(context: Context) {
   const issueNumber = payload.issue.number;
 
   if (eventName === "issues.assigned") {
-    await db.update((data) => {
-      const dbKey = `${context.payload.repository.owner?.login}/${context.payload.repository.name}`;
-      if (!data[dbKey]) {
-        data[dbKey] = [];
-      }
-      if (!data[dbKey].some((o) => o.issueNumber === issueNumber)) {
-        data[dbKey].push({
-          issueNumber: issueNumber,
-        });
-      }
-      return data;
-    });
+    await context.adapters.kv.addIssue(payload.issue.html_url);
     logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url });
     return;
   }
@@ -69,13 +50,7 @@ export async function updatePullRequests(context: Context) {
 
   if (!pullRequests?.length) {
     logger.info("Nothing to do, clearing entry from DB.");
-    await db.update((data) => {
-      const key = `${context.payload.repository.owner}/${context.payload.repository.name}`;
-      if (data[key]) {
-        data[key] = data[key].filter((o) => o.issueNumber !== issueNumber);
-      }
-      return data;
-    });
+    await context.adapters.kv.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
     return;
   }
 

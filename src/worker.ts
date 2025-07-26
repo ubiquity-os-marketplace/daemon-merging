@@ -2,13 +2,17 @@ import { createPlugin } from "@ubiquity-os/plugin-sdk";
 import { Manifest } from "@ubiquity-os/plugin-sdk/dist/manifest";
 import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
 import manifest from "../manifest.json";
+import { createAdapters } from "./adapters";
 import { plugin } from "./plugin";
-import { Env, envSchema, SupportedEvents } from "./types";
+import { Context, Env, envSchema, SupportedEvents } from "./types";
 import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
 
 const app = createPlugin<PluginSettings, Env, null, SupportedEvents>(
-  (context) => {
-    return plugin(context);
+  async (context) => {
+    // Create adapters and add them to context
+    const adapters = await createAdapters();
+    const contextWithAdapters = { ...context, adapters } as Context;
+    return plugin(contextWithAdapters);
   },
   manifest as Manifest,
   {
