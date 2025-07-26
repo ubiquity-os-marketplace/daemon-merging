@@ -1,7 +1,7 @@
 import { Context as BasicContext } from "@ubiquity-os/plugin-sdk";
 import { createAdapters } from "./adapters/index";
 import { updatePullRequests } from "./helpers/update-pull-requests";
-import { Context } from "./types";
+import { Context } from "./types/index";
 
 /**
  * How a worker executes the plugin.

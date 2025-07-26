@@ -3,7 +3,7 @@ import ms from "ms";
 import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
-import { Context, ReposWatchSettings } from "../types";
+import { Context, ReposWatchSettings } from "../types/index";
 import {
   getApprovalCount,
   getMergeTimeoutAndApprovalRequiredCount,

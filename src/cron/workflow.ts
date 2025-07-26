@@ -1,7 +1,7 @@
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
-import { Context } from "../types";
+import { Context } from "../types/index";
 
 export async function updateCronState(context: Context) {
   context.logger.debug("Updating the cron.yml workflow state.");

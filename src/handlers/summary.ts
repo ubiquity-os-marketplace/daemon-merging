@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { parseGitHubUrl } from "../helpers/github";
-import { Context } from "../types";
+import { Context } from "../types/index";
 
 export interface ResultInfo {
   url: string;

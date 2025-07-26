@@ -1,5 +1,5 @@
 import { retryAsync } from "ts-retry";
-import { Context, ReposWatchSettings } from "../types";
+import { Context, ReposWatchSettings } from "../types/index";
 
 export function parseGitHubUrl(url: string) {
   const path = new URL(url).pathname.split("/");

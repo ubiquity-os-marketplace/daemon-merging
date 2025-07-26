@@ -5,7 +5,7 @@ import { customOctokit as Octokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import { http, HttpResponse } from "msw";
 import * as githubHelpers from "../src/helpers/github";
-import { Context, pluginSettingsSchema } from "../src/types";
+import { Context, pluginSettingsSchema } from "../src/types/index";
 import { db } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import seed from "./__mocks__/seed.json";
