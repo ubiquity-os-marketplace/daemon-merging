@@ -14,9 +14,6 @@
     },
     {
       "issueNumber": 329
-    },
-    {
-      "issueNumber": 269
     }
   ],
   "ubiquity-os-marketplace/command-config": [
@@ -55,16 +52,6 @@
   "ubiquity-os-marketplace/daemon-merging": [
     {
       "issueNumber": 48
-    }
-  ],
-  "ubiquity/demo.ubq.fi": [
-    {
-      "issueNumber": 9
-    }
-  ],
-  "ubiquity-os-marketplace/daemon-pricing": [
-    {
-      "issueNumber": 125
     }
   ]
 }
