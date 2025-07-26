@@ -1,3 +1,4 @@
+import { Context as BasicContext } from "@ubiquity-os/plugin-sdk";
 import { createAdapters } from "./adapters";
 import { updatePullRequests } from "./helpers/update-pull-requests";
 import { Context } from "./types";
@@ -5,9 +6,9 @@ import { Context } from "./types";
 /**
  * How a worker executes the plugin.
  */
-export async function plugin(context: Context) {
-  context.adapters = await createAdapters();
+export async function plugin(context: BasicContext) {
+  const augmentedContext = { ...context, adapters: await createAdapters() } as Context;
 
-  context.logger.info("Will check the following repos", { ...context.config.repos });
-  return await updatePullRequests(context);
+  context.logger.info("Will check the following repos", { ...augmentedContext.config.repos });
+  return await updatePullRequests(augmentedContext);
 }
