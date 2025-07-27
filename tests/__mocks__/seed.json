@@ -5,10 +5,7 @@
       "head": {
         "sha": "1"
       },
-      "author_association": "MEMBER",
-      "body": "This PR closes #1",
-      "title": "Fix issue",
-      "draft": false
+      "author_association": "MEMBER"
     }
   ],
   "ci": [
