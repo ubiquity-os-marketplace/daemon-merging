@@ -1,5 +1,64 @@
 import { retryAsync } from "ts-retry";
-import { Context, ReposWatchSettings } from "../types/index";
+import { Context, ExcludedRepos } from "../types/index";
+
+/**
+ * Finds pull requests that are linked to a specific issue through keywords like "closes", "fixes", "resolves"
+ */
+export async function getPullRequestsLinkedToIssue(context: Context, issueNumber: number, excludedRepos: ExcludedRepos) {
+  const { octokit, logger, payload } = context;
+
+  if (!payload.repository?.owner?.login || !payload.repository?.name) {
+    throw new Error("Repository owner or name not found in payload");
+  }
+
+  const owner = payload.repository.owner.login;
+  const repo = payload.repository.name;
+  const repoFullName = `${owner}/${repo}`;
+
+  // Check if this repository is excluded
+  if (excludedRepos.includes(repoFullName)) {
+    logger.warn(`Repository ${repoFullName} is in excluded list, skipping`, {
+      excludedRepos,
+      repoFullName,
+    });
+    return [];
+  }
+
+  logger.info(`Finding pull requests linked to issue #${issueNumber} in repository ${repoFullName}`);
+
+  try {
+    // Get all open pull requests for the repository
+    const pullRequests = await octokit.paginate(octokit.rest.pulls.list, {
+      owner,
+      repo,
+      state: "open",
+    });
+
+    // Filter PRs that are not drafts and are linked to the issue
+    const linkedPullRequests = pullRequests.filter((pr) => {
+      if (pr.draft) return false;
+
+      // Check if PR body contains linking keywords for the issue
+      const linkingKeywords = /(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s*#?(\d+)/gi;
+      const body = pr.body || "";
+      const title = pr.title || "";
+
+      let match;
+      while ((match = linkingKeywords.exec(body + " " + title)) !== null) {
+        if (parseInt(match[1]) === issueNumber) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`);
+    return linkedPullRequests;
+  } catch (e) {
+    logger.error(`Error getting pull requests linked to issue #${issueNumber} for repo: ${repoFullName}. ${e}`);
+    throw e;
+  }
+}
 
 export function parseGitHubUrl(url: string) {
   const path = new URL(url).pathname.split("/");
@@ -106,75 +165,6 @@ export async function isCiGreen({ octokit, logger, env }: Context, sha: string, 
   } catch (e) {
     logger.error(`Error checking CI status: ${e}`);
     return false;
-  }
-}
-
-function parseTarget({ payload, logger }: Context, target: string) {
-  if (!payload.repository.owner) {
-    throw new Error(logger.error("No repository owner has been found, the target cannot be parsed.").logMessage.raw);
-  }
-  const owner = payload.repository.owner.login;
-  const [orgParsed, repoParsed] = target.split("/");
-  let repoTarget;
-  if (repoParsed) {
-    if (orgParsed !== owner) {
-      return null;
-    }
-    repoTarget = repoParsed;
-  } else {
-    repoTarget = orgParsed;
-  }
-  return { org: owner, repo: repoTarget };
-}
-
-/**
- * Returns all the pull requests that are opened and not a draft from the list of repos / organizations.
- *
- * https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-only-issues-or-pull-requests
- */
-export async function getOpenPullRequests(context: Context, targets: ReposWatchSettings) {
-  const { octokit, logger, payload } = context;
-
-  if (!payload.repository?.owner?.login || !payload.repository?.name) {
-    throw new Error("Repository owner or name not found in payload");
-  }
-
-  const owner = payload.repository.owner.login;
-  const repo = payload.repository.name;
-
-  logger.info(`Fetching pull requests for repository ${owner}/${repo}`, { url: payload.repository.html_url });
-
-  const isIgnored = targets.ignore.some((target) => {
-    const parsedTarget = parseTarget(context, target);
-    if (!parsedTarget) return false;
-
-    // Check if it matches org-level ignore
-    if (!parsedTarget.repo && parsedTarget.org === owner) {
-      return true;
-    }
-    // Check if it matches repo-level ignore
-    return !!(parsedTarget.repo && parsedTarget.org === owner && parsedTarget.repo === repo);
-  });
-
-  if (isIgnored) {
-    logger.warn(`Repository ${owner}/${repo} is in ignore list, skipping`, {
-      ignore: targets.ignore,
-      owner,
-      repo,
-    });
-    return [];
-  }
-
-  try {
-    const data = await octokit.paginate(octokit.rest.pulls.list, {
-      owner,
-      repo,
-      state: "open",
-    });
-    return data.filter((pr) => !pr.draft);
-  } catch (e) {
-    logger.error(`Error getting open pull-requests for repo: ${owner}/${repo}. ${e}`);
-    throw e;
   }
 }
 

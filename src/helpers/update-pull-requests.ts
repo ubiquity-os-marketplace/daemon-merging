@@ -3,11 +3,11 @@ import ms from "ms";
 import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
-import { Context, ReposWatchSettings } from "../types/index";
+import { Context } from "../types/index";
 import {
   getApprovalCount,
   getMergeTimeoutAndApprovalRequiredCount,
-  getOpenPullRequests,
+  getPullRequestsLinkedToIssue,
   getPullRequestDetails,
   isCiGreen,
   IssueParams,
@@ -46,10 +46,10 @@ export async function updatePullRequests(context: Context) {
     return;
   }
 
-  const pullRequests = await getOpenPullRequests(context, context.config.repos as ReposWatchSettings);
+  const pullRequests = await getPullRequestsLinkedToIssue(context, issueNumber, context.config.excludedRepos || []);
 
   if (!pullRequests?.length) {
-    logger.info("Nothing to do, clearing entry from DB.");
+    logger.info("No linked pull requests found, clearing entry from DB.");
     await context.adapters.kv.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
     return;
   }

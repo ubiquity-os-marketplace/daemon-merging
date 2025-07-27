@@ -28,10 +28,8 @@ function generateGitHubSummary(context: Context, urls: ResultInfo[]): string {
   output.push("⚫️ = unmerged");
   output.push("\n</samp>\n");
   output.push("## Configuration\n\n");
-  output.push("### Watching Repositories\n\n");
-  output.push(context.config.repos?.monitor.map((o) => `- [${o}](${target}/${o})`).join("\n"));
   output.push("### Ignored Repositories\n\n");
-  output.push(context.config.repos?.ignore.map((o) => `- [${o}](${target}/${o})`).join("\n"));
+  output.push(context.config.excludedRepos?.map((repo) => `- [${repo}](${target}/${repo})`).join("\n"));
   return output.join("\n");
 }
 

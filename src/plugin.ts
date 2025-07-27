@@ -9,6 +9,6 @@ import { Context } from "./types/index";
 export async function plugin(context: BasicContext) {
   const augmentedContext = { ...context, adapters: await createAdapters() } as Context;
 
-  context.logger.info("Will check the following repos", { ...augmentedContext.config.repos });
+  context.logger.info("Will exclude the following repos", { ...augmentedContext.config.excludedRepos });
   return await updatePullRequests(augmentedContext);
 }

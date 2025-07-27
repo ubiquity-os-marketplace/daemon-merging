@@ -28,15 +28,7 @@ export class KvDatabaseHandler {
 
   async removeIssue(url: string): Promise<void> {
     const { owner, repo, issue_number } = parseGitHubUrl(url);
-    const key = [KV_PREFIX, owner, repo];
-    const currentNumbers = await this.getIssueNumbers(owner, repo);
-    const filteredNumbers = currentNumbers.filter((id) => id !== issue_number);
-
-    if (filteredNumbers.length === 0) {
-      await this._kv.delete(key);
-    } else {
-      await this._kv.set(key, filteredNumbers);
-    }
+    return this.removeIssueByNumber(owner, repo, issue_number);
   }
 
   async removeIssueByNumber(owner: string, repo: string, issueNumber: number): Promise<void> {

@@ -14,8 +14,7 @@ on the association of the pull-request author.
     mergeTimeout:
       collaborator: "3.5 days" # defaults to 3.5 days
       contributor: "7 days" # defaults to 7 days
-    repos:
-      ignore: ["ubiquity-os-marketplace/daemon-merging"]
+    excludedRepos: ["owner/repo", "another-org/specific-repo"]
     allowedReviewerRoles: ["COLLABORATOR", "MEMBER", "OWNER"]
 ```
 
@@ -79,15 +78,12 @@ mergeTimeout: {
 }
 ```
 
-#### Repository Monitoring
+#### Repository Exclusion
 
-Fine-grained repository control:
+Repositories to exclude from monitoring:
 
 ```typescript
-repos: {
-  monitor: string[]; // Repositories to watch
-  ignore: string[];  // Repositories to exclude
-}
+excludedRepos: string[]; // Repositories in "owner/repo" format to exclude
 ```
 
 #### Reviewer Roles
@@ -136,6 +132,7 @@ The project uses a comprehensive type system built on TypeScript:
 
 3. **PR Evaluation**
 
+   - Find PRs linked to the specific issue from the payload
    - Author association checked
    - Review counts tallied
    - Time thresholds evaluated
