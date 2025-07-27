@@ -1,5 +1,5 @@
 {
-  "name": "@ubiquibot/automated-merging",
+  "name": "@ubiquity-os/daemon-merging",
   "version": "1.0.0",
   "description": "Conditionally merge pull requests after a timeout.",
   "author": "Ubiquity DAO",
