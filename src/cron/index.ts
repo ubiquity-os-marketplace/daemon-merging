@@ -2,6 +2,7 @@ import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
+import pkg from "../../package.json" with { type: "json" };
 import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
 
 async function main() {
@@ -18,26 +19,26 @@ async function main() {
   const kvAdapter = await createKvDatabaseHandler();
   const repositories = await kvAdapter.getAllRepositories();
 
-  logger.info(`Loaded DB data.`, {
-    data: JSON.stringify(repositories, null, 2),
+  logger.info(`Loaded KV data.`, {
+    repositories: repositories.length,
   });
 
-  for (const repository of repositories) {
+  for (const { owner, repo, issueNumbers } of repositories) {
+    if (issueNumbers.length === 0) {
+      continue;
+    }
+
     try {
       logger.info(`Triggering update`, {
-        repository,
-      });
-      const { owner, repo, issueNumbers } = repository;
-      const installation = await octokit.rest.apps.getRepoInstallation({
-        owner,
-        repo,
+        organization: owner,
+        repository: repo,
+        issueIds: issueNumbers,
       });
 
-      const issueNumber = issueNumbers[issueNumbers.length - 1];
-      if (!issueNumber) {
-        logger.error(`No issue numbers found for repository ${owner}/${repo}`);
-        continue;
-      }
+      const installation = await octokit.rest.apps.getRepoInstallation({
+        owner: owner,
+        repo: repo,
+      });
 
       const repoOctokit = new customOctokit({
         authStrategy: createAppAuth,
@@ -47,23 +48,46 @@ async function main() {
           installationId: installation.data.id,
         },
       });
-      const {
-        data: { body = "" },
-      } = await repoOctokit.rest.issues.get({
-        owner,
-        repo,
-        issue_number: issueNumber,
-      });
-      const newBody = body + `\n<!-- daemon-merging update ${Date().toLocaleString()} -->`;
-      logger.info(`Updated body ${issueNumber}`, { newBody });
-      await repoOctokit.rest.issues.update({
-        owner,
-        repo,
-        issue_number: issueNumber,
-        body: newBody,
-      });
+
+      for (const issueNumber of issueNumbers) {
+        const url = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
+        try {
+          const {
+            data: { body = "" },
+          } = await repoOctokit.rest.issues.get({
+            owner: owner,
+            repo: repo,
+            issue_number: issueNumber,
+          });
+
+          const newBody = body + `\n<!-- ${pkg.name} update ${new Date().toISOString()} -->`;
+          logger.info(`Updated body of ${url}`, { newBody });
+
+          await repoOctokit.rest.issues.update({
+            owner: owner,
+            repo: repo,
+            issue_number: issueNumber,
+            body: newBody,
+          });
+
+          await kvAdapter.removeIssue(url);
+        } catch (err) {
+          logger.error("Failed to update individual issue", {
+            organization: owner,
+            repository: repo,
+            issueNumber,
+            url,
+            err,
+          });
+        }
+      }
     } catch (e) {
-      logger.error("Failed to update the issue body", { repository, e });
+      logger.error("Failed to process repository", {
+        owner,
+        repo,
+        issueNumbers,
+        e,
+      });
     }
   }
 }
