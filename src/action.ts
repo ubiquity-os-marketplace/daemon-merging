@@ -6,8 +6,9 @@ import { Env, envSchema } from "./types/env";
 import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
 
 createActionsPlugin<PluginSettings, Env, null, SupportedEvents>(
-  (context) => {
-    return plugin(context);
+  async (context) => {
+    await plugin(context);
+    process.exit(0);
   },
   {
     envSchema: envSchema,
