@@ -1,8 +1,9 @@
 import { retryAsync } from "ts-retry";
 import { Context, ExcludedRepos } from "../types/index";
+import { QUERY_LINKED_PULL_REQUESTS, LinkedPullRequestsResponse } from "./github-queries";
 
 /**
- * Finds pull requests that are linked to a specific issue through keywords like "closes", "fixes", "resolves"
+ * Finds pull requests that are linked to a specific issue using GitHub's GraphQL API
  */
 export async function getPullRequestsLinkedToIssue(context: Context, issueNumber: number, excludedRepos: ExcludedRepos) {
   const { octokit, logger, payload } = context;
@@ -27,32 +28,18 @@ export async function getPullRequestsLinkedToIssue(context: Context, issueNumber
   logger.info(`Finding pull requests linked to issue #${issueNumber} in repository ${repoFullName}`);
 
   try {
-    // Get all open pull requests for the repository
-    const pullRequests = await octokit.paginate(octokit.rest.pulls.list, {
+    const response = await octokit.graphql.paginate<LinkedPullRequestsResponse>(QUERY_LINKED_PULL_REQUESTS, {
       owner,
       repo,
-      state: "open",
+      issueNumber,
     });
 
-    // Filter PRs that are not drafts and are linked to the issue
-    const linkedPullRequests = pullRequests.filter((pr) => {
-      if (pr.draft) return false;
+    const allEdges = response.repository?.issue?.closedByPullRequestsReferences?.edges || [];
 
-      // Check if PR body contains linking keywords for the issue
-      const linkingKeywords = /(?:close[ds]?|fix(?:e[ds])?|resolve[ds]?)\s*#?(\d+)/gi;
-      const body = pr.body || "";
-      const title = pr.title || "";
+    // Extract linked pull requests that are open and not drafts
+    const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft);
 
-      let match;
-      while ((match = linkingKeywords.exec(body + " " + title)) !== null) {
-        if (parseInt(match[1]) === issueNumber) {
-          return true;
-        }
-      }
-      return false;
-    });
-
-    logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`);
+    logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`, { owner, repo });
     return linkedPullRequests;
   } catch (e) {
     logger.error(`Error getting pull requests linked to issue #${issueNumber} for repo: ${repoFullName}. ${e}`);
