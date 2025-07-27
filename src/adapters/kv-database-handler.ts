@@ -9,17 +9,16 @@ export class KvDatabaseHandler {
     this._kv = kv;
   }
 
-  async getIssueNumbers(repository: string): Promise<number[]> {
-    const key = ["issues", repository];
-    const result = await this._kv.get(key);
-    return (result.value as number[]) || [];
+  async getIssueNumbers(owner: string, repo: string): Promise<number[]> {
+    const key = [KV_PREFIX, owner, repo];
+    const result = await this._kv.get<number[]>(key);
+    return result.value || [];
   }
 
   async addIssue(url: string): Promise<void> {
     const { owner, repo, issue_number } = parseGitHubUrl(url);
     const key = [KV_PREFIX, owner, repo];
-    const repository = `${owner}/${repo}`;
-    const currentIds = await this.getIssueNumbers(repository);
+    const currentIds = await this.getIssueNumbers(owner, repo);
 
     if (!currentIds.includes(issue_number)) {
       currentIds.push(issue_number);
@@ -30,8 +29,7 @@ export class KvDatabaseHandler {
   async removeIssue(url: string): Promise<void> {
     const { owner, repo, issue_number } = parseGitHubUrl(url);
     const key = [KV_PREFIX, owner, repo];
-    const repository = `${owner}/${repo}`;
-    const currentNumbers = await this.getIssueNumbers(repository);
+    const currentNumbers = await this.getIssueNumbers(owner, repo);
     const filteredNumbers = currentNumbers.filter((id) => id !== issue_number);
 
     if (filteredNumbers.length === 0) {
@@ -43,8 +41,7 @@ export class KvDatabaseHandler {
 
   async removeIssueByNumber(owner: string, repo: string, issueNumber: number): Promise<void> {
     const key = [KV_PREFIX, owner, repo];
-    const repository = `${owner}/${repo}`;
-    const currentNumbers = await this.getIssueNumbers(repository);
+    const currentNumbers = await this.getIssueNumbers(owner, repo);
     const filteredNumbers = currentNumbers.filter((id) => id !== issueNumber);
 
     if (filteredNumbers.length === 0) {
