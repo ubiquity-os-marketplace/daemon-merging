@@ -1,3 +1,4 @@
+import { PullRequest } from "@octokit/graphql-schema";
 import { retryAsync } from "ts-retry";
 import { Context, ExcludedRepos } from "../types/index";
 import { QUERY_LINKED_PULL_REQUESTS, LinkedPullRequestsResponse } from "./github-queries";
@@ -35,7 +36,7 @@ export async function getPullRequestsLinkedToIssue(context: Context, issueNumber
 
     const allEdges = response.repository?.issue?.closedByPullRequestsReferences?.edges || [];
 
-    const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft);
+    const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft) as PullRequest[];
 
     logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`, { owner, repo });
     return linkedPullRequests;

@@ -54,17 +54,17 @@ export async function updatePullRequests(context: Context) {
     return;
   }
 
-  for (const { html_url } of pullRequests) {
+  for (const { url } of pullRequests) {
     let isMerged = false;
     try {
-      const gitHubUrl = parseGitHubUrl(html_url);
+      const gitHubUrl = parseGitHubUrl(url);
       const pullRequestDetails = await getPullRequestDetails(context, gitHubUrl);
-      logger.debug(`Processing pull-request ${html_url} ...`);
+      logger.debug(`Processing pull-request ${url} ...`);
       if (pullRequestDetails.merged || pullRequestDetails.closed_at) {
-        logger.info(`The pull request ${html_url} is already merged or closed, nothing to do.`);
+        logger.info(`The pull request ${url} is already merged or closed, nothing to do.`);
         continue;
       }
-      const activity = await getAllTimelineEvents(context, parseGitHubUrl(html_url));
+      const activity = await getAllTimelineEvents(context, parseGitHubUrl(url));
       const eventDates: Date[] = activity.reduce<Date[]>((acc, event) => {
         if (isTimelineEvent(event)) {
           const date = new Date(event.created_at || event.updated_at || event.timestamp || event.commented_at || event.submitted_at || "");
@@ -82,11 +82,11 @@ export async function updatePullRequests(context: Context) {
         `Requirements according to association ${pullRequestDetails.author_association}: ${JSON.stringify(requirements)} with last activity date: ${lastActivityDate}`
       );
       if (isNaN(lastActivityDate.getTime())) {
-        logger.info(`PR ${html_url} does not seem to have any activity, nothing to do.`);
+        logger.info(`PR ${url} does not seem to have any activity, nothing to do.`);
       } else if (requirements?.mergeTimeout && isPastOffset(lastActivityDate, requirements?.mergeTimeout)) {
         isMerged = await attemptMerging(context, {
           gitHubUrl,
-          htmlUrl: html_url,
+          htmlUrl: url,
           requirements: requirements as Requirements,
           lastActivityDate,
           pullRequestDetails,
@@ -97,15 +97,15 @@ export async function updatePullRequests(context: Context) {
           issue_number: issueNumber,
         });
       } else {
-        logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`, {
+        logger.info(`PR ${url} has activity up until (${lastActivityDate}), nothing to do.`, {
           lastActivityDate,
           mergeTimeout: requirements?.mergeTimeout,
         });
       }
     } catch (e) {
-      logger.error(`Could not process pull-request ${html_url} for auto-merge: ${e}`);
+      logger.error(`Could not process pull-request ${url} for auto-merge: ${e}`);
     }
-    results.push({ url: html_url, merged: isMerged });
+    results.push({ url: url, merged: isMerged });
   }
   await generateSummary(context, results);
   await updateCronState(context);
