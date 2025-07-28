@@ -69,8 +69,6 @@ async function main() {
             issue_number: issueNumber,
             body: newBody,
           });
-
-          await kvAdapter.removeIssue(url);
         } catch (err) {
           logger.error("Failed to update individual issue", {
             organization: owner,
