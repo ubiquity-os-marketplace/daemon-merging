@@ -44,13 +44,20 @@ export async function updatePullRequests(context: Context) {
     await context.adapters.kv.addIssue(payload.issue.html_url);
     logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url });
     return;
+  } else if (eventName === "issues.unassigned" || eventName === "issues.closed") {
+    if (eventName === "issues.unassigned" && payload.issue.assignees?.length) {
+      logger.info(`Issue ${issueNumber} still has assignees, nothing to do.`);
+      return;
+    }
+    await context.adapters.kv.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
+    logger.info(`Issue ${issueNumber} had been removed from the DB.`, { url: payload.issue.html_url });
+    return;
   }
 
   const pullRequests = await getPullRequestsLinkedToIssue(context, issueNumber, context.config.excludedRepos || []);
 
   if (!pullRequests?.length) {
-    logger.info("No linked pull requests found, clearing entry from DB.");
-    await context.adapters.kv.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
+    logger.info("No linked pull requests found, nothing to do.");
     return;
   }
 
