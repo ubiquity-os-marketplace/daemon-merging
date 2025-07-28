@@ -98,11 +98,13 @@ export async function updatePullRequests(context: Context) {
           lastActivityDate,
           pullRequestDetails,
         });
-        await removeEntryFromDatabase(context, {
-          repo: context.payload.repository.name,
-          owner: `${context.payload.repository.owner.login}`,
-          issue_number: issueNumber,
-        });
+        if (isMerged) {
+          await removeEntryFromDatabase(context, {
+            repo: context.payload.repository.name,
+            owner: `${context.payload.repository.owner.login}`,
+            issue_number: issueNumber,
+          });
+        }
       } else {
         logger.info(`PR ${url} has activity up until (${lastActivityDate}), nothing to do.`, {
           lastActivityDate,
