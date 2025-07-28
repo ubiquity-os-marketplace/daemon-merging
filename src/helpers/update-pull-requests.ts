@@ -1,14 +1,13 @@
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
 import ms from "ms";
-import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
 import { Context } from "../types/index";
 import {
   getApprovalCount,
   getMergeTimeoutAndApprovalRequiredCount,
-  getPullRequestsLinkedToIssue,
   getPullRequestDetails,
+  getPullRequestsLinkedToIssue,
   isCiGreen,
   IssueParams,
   mergePullRequest,
@@ -117,7 +116,6 @@ export async function updatePullRequests(context: Context) {
     results.push({ url: url, merged: isMerged });
   }
   await generateSummary(context, results);
-  await updateCronState(context);
 }
 
 async function attemptMerging(
