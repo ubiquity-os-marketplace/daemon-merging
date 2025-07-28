@@ -18,7 +18,9 @@ export const QUERY_LINKED_PULL_REQUESTS = /* GraphQL */ `
                 login
               }
               repository {
+                id
                 owner {
+                  id
                   login
                 }
                 name

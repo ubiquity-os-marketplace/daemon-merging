@@ -7,7 +7,7 @@ import { Env, envSchema, SupportedEvents } from "./types/index";
 import { PluginSettings, pluginSettingsSchema } from "./types/plugin-input";
 
 const app = createPlugin<PluginSettings, Env, null, SupportedEvents>(
-  async (context) => {
+  (context) => {
     return plugin(context);
   },
   manifest as Manifest,

@@ -18,7 +18,7 @@ export async function getPullRequestsLinkedToIssue(context: Context, issueNumber
   const repoFullName = `${owner}/${repo}`;
 
   if (excludedRepos.includes(repoFullName)) {
-    logger.warn(`Repository ${repoFullName} is in excluded list, skipping`, {
+    logger.warn(`Repository ${repoFullName} is in the excluded list, skipping`, {
       excludedRepos,
       repoFullName,
     });
@@ -27,23 +27,18 @@ export async function getPullRequestsLinkedToIssue(context: Context, issueNumber
 
   logger.info(`Finding pull requests linked to issue #${issueNumber} in repository ${repoFullName}`);
 
-  try {
-    const response = await octokit.graphql.paginate<LinkedPullRequestsResponse>(QUERY_LINKED_PULL_REQUESTS, {
-      owner,
-      repo,
-      issueNumber,
-    });
+  const response = await octokit.graphql.paginate<LinkedPullRequestsResponse>(QUERY_LINKED_PULL_REQUESTS, {
+    owner,
+    repo,
+    issueNumber,
+  });
 
-    const allEdges = response.repository?.issue?.closedByPullRequestsReferences?.edges || [];
+  const allEdges = response.repository?.issue?.closedByPullRequestsReferences?.edges || [];
 
-    const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft) as PullRequest[];
+  const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft) as PullRequest[];
 
-    logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`, { owner, repo });
-    return linkedPullRequests;
-  } catch (e) {
-    logger.error(`Error getting pull requests linked to issue #${issueNumber} for repo: ${repoFullName}. ${e}`);
-    throw e;
-  }
+  logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`, { owner, repo });
+  return linkedPullRequests;
 }
 
 export function parseGitHubUrl(url: string) {
