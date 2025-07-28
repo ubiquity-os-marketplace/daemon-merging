@@ -16,7 +16,6 @@ export async function getPullRequestsLinkedToIssue(context: Context, issueNumber
   const repo = payload.repository.name;
   const repoFullName = `${owner}/${repo}`;
 
-  // Check if this repository is excluded
   if (excludedRepos.includes(repoFullName)) {
     logger.warn(`Repository ${repoFullName} is in excluded list, skipping`, {
       excludedRepos,
@@ -36,7 +35,6 @@ export async function getPullRequestsLinkedToIssue(context: Context, issueNumber
 
     const allEdges = response.repository?.issue?.closedByPullRequestsReferences?.edges || [];
 
-    // Extract linked pull requests that are open and not drafts
     const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft);
 
     logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`, { owner, repo });
