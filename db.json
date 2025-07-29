@@ -32,6 +32,9 @@
   "ubiquity-os-marketplace/text-vector-embeddings": [
     {
       "issueNumber": 98
+    },
+    {
+      "issueNumber": 95
     }
   ],
   "ubiquity-os-marketplace/daemon-disqualifier": [
