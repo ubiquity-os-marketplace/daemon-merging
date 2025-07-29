@@ -14,9 +14,6 @@
     },
     {
       "issueNumber": 329
-    },
-    {
-      "issueNumber": 395
     }
   ],
   "ubiquity-os-marketplace/command-config": [
@@ -32,9 +29,6 @@
   "ubiquity-os-marketplace/text-vector-embeddings": [
     {
       "issueNumber": 98
-    },
-    {
-      "issueNumber": 95
     }
   ],
   "ubiquity-os-marketplace/daemon-disqualifier": [
@@ -50,14 +44,19 @@
   "ubiquity-os/ubiquity-os-kernel": [
     {
       "issueNumber": 282
+    },
+    {
+      "issueNumber": 281
     }
   ],
   "ubiquity-os-marketplace/daemon-merging": [
     {
       "issueNumber": 48
-    },
+    }
+  ],
+  "ubiquity/cloudflare-deploy-action": [
     {
-      "issueNumber": 51
+      "issueNumber": 29
     }
   ]
 }
