@@ -44,9 +44,6 @@
   "ubiquity-os/ubiquity-os-kernel": [
     {
       "issueNumber": 282
-    },
-    {
-      "issueNumber": 281
     }
   ],
   "ubiquity-os-marketplace/daemon-merging": [
