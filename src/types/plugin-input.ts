@@ -76,4 +76,3 @@ export const pluginSettingsSchema = T.Object({
 });
 
 export type PluginSettings = StaticDecode<typeof pluginSettingsSchema>;
-export type ExcludedRepos = StaticDecode<typeof excludedReposSchema>;
