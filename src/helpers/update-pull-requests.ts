@@ -80,12 +80,16 @@ export async function updatePullRequests(context: Context) {
     return;
   }
 
+  logger.ok(`Found ${pullRequests.length} linked pull requests, will process them.`, {
+    prs: pullRequests.map((o) => o.url),
+  });
+
   for (const { url } of pullRequests) {
     let isMerged = false;
     try {
       const gitHubUrl = parseGitHubUrl(url);
       const pullRequestDetails = await getPullRequestDetails(context, gitHubUrl);
-      logger.debug(`Processing pull-request ${url} ...`);
+      logger.debug(`Processing pull-request ${url}`);
       if (pullRequestDetails.merged || pullRequestDetails.closed_at) {
         logger.info(`The pull request ${url} is already merged or closed, nothing to do.`);
         continue;
@@ -107,9 +111,9 @@ export async function updatePullRequests(context: Context) {
           : new Date(pullRequestDetails.updated_at || pullRequestDetails.created_at || "");
 
       const requirements = await getMergeTimeoutAndApprovalRequiredCount(context, pullRequestDetails.author_association);
-      logger.debug(
-        `Requirements according to association ${pullRequestDetails.author_association}: ${JSON.stringify(requirements)} with last activity date: ${lastActivityDate}`
-      );
+      logger.debug(`Requirements according to association ${pullRequestDetails.author_association} with last activity date: ${lastActivityDate}`, {
+        requirements,
+      });
 
       if (isNaN(lastActivityDate.getTime())) {
         logger.info(`PR ${url} does not seem to have any activity, nothing to do.`);
