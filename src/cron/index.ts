@@ -5,6 +5,40 @@ import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import pkg from "../../package.json" with { type: "json" };
 import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
 
+const RATE_LIMIT_MAX_ITEMS_PER_WINDOW = 500;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+let rateWindowStart = Date.now();
+let rateProcessed = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Enforce a simple sliding-window style limit:
+ * - Up to RATE_LIMIT_MAX_ITEMS_PER_WINDOW operations per RATE_LIMIT_WINDOW_MS.
+ * - If the cap is reached before the window elapses, wait for the remainder of the window.
+ */
+async function enforceRateLimit(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - rateWindowStart;
+
+  if (elapsed >= RATE_LIMIT_WINDOW_MS) {
+    rateWindowStart = now;
+    rateProcessed = 0;
+    return;
+  }
+
+  if (rateProcessed >= RATE_LIMIT_MAX_ITEMS_PER_WINDOW) {
+    await sleep(RATE_LIMIT_WINDOW_MS - elapsed);
+    rateWindowStart = Date.now();
+    rateProcessed = 0;
+  }
+}
+
 async function main() {
   const logger = new Logs(process.env.LOG_LEVEL ?? "info");
   const octokit = new Octokit({
@@ -49,35 +83,37 @@ async function main() {
         },
       });
 
-      for (const issueNumber of issueNumbers) {
-        const url = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
-        try {
-          const {
-            data: { body = "" },
-          } = await repoOctokit.rest.issues.get({
-            owner: owner,
-            repo: repo,
-            issue_number: issueNumber,
-          });
+      const issueNumber = issueNumbers[0];
+      const url = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
+      try {
+        await enforceRateLimit();
+        const {
+          data: { body = "" },
+        } = await repoOctokit.rest.issues.get({
+          owner: owner,
+          repo: repo,
+          issue_number: issueNumber,
+        });
 
-          const newBody = body + `\n<!-- ${pkg.name} update ${new Date().toISOString()} -->`;
-          logger.info(`Updated body of ${url}`, { newBody });
+        const newBody = body + `\n<!-- ${pkg.name} update ${new Date().toISOString()} -->`;
+        logger.info(`Updated body of ${url}`, { newBody, totalIssues: issueNumbers.length, issueNumber });
 
-          await repoOctokit.rest.issues.update({
-            owner: owner,
-            repo: repo,
-            issue_number: issueNumber,
-            body: newBody,
-          });
-        } catch (err) {
-          logger.error("Failed to update individual issue", {
-            organization: owner,
-            repository: repo,
-            issueNumber,
-            url,
-            err,
-          });
-        }
+        await repoOctokit.rest.issues.update({
+          owner: owner,
+          repo: repo,
+          issue_number: issueNumber,
+          body: newBody,
+        });
+      } catch (err) {
+        logger.error("Failed to update individual issue", {
+          organization: owner,
+          repository: repo,
+          issueNumber,
+          url,
+          err,
+        });
+      } finally {
+        rateProcessed++;
       }
     } catch (e) {
       logger.error("Failed to process repository", {
