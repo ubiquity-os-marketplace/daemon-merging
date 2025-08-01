@@ -10,6 +10,7 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 
 let rateWindowStart = Date.now();
 let rateProcessed = 0;
+const logger = new Logs(process.env.LOG_LEVEL ?? "info");
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -17,11 +18,6 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-/**
- * Enforce a simple sliding-window style limit:
- * - Up to RATE_LIMIT_MAX_ITEMS_PER_WINDOW operations per RATE_LIMIT_WINDOW_MS.
- * - If the cap is reached before the window elapses, wait for the remainder of the window.
- */
 async function enforceRateLimit(): Promise<void> {
   const now = Date.now();
   const elapsed = now - rateWindowStart;
@@ -33,14 +29,19 @@ async function enforceRateLimit(): Promise<void> {
   }
 
   if (rateProcessed >= RATE_LIMIT_MAX_ITEMS_PER_WINDOW) {
-    await sleep(RATE_LIMIT_WINDOW_MS - elapsed);
+    const waitMs = RATE_LIMIT_WINDOW_MS - elapsed;
+    logger.info("Rate limit reached, waiting for reset.", {
+      processedInWindow: rateProcessed,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+      waitMs,
+    });
+    await sleep(waitMs);
     rateWindowStart = Date.now();
     rateProcessed = 0;
   }
 }
 
 async function main() {
-  const logger = new Logs(process.env.LOG_LEVEL ?? "info");
   const octokit = new Octokit({
     authStrategy: createAppAuth,
     auth: {
