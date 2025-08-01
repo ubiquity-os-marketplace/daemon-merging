@@ -14,9 +14,6 @@
     },
     {
       "issueNumber": 329
-    },
-    {
-      "issueNumber": 397
     }
   ],
   "ubiquity-os-marketplace/command-config": [
@@ -47,26 +44,14 @@
   "ubiquity-os/ubiquity-os-kernel": [
     {
       "issueNumber": 282
+    },
+    {
+      "issueNumber": 281
     }
   ],
   "ubiquity-os-marketplace/daemon-merging": [
     {
       "issueNumber": 48
-    }
-  ],
-  "ubiquity/cloudflare-deploy-action": [
-    {
-      "issueNumber": 29
-    }
-  ],
-  "ubiquity-os/empty-string-checker": [
-    {
-      "issueNumber": 2
-    }
-  ],
-  "ubiquity-os-marketplace/daemon-pricing": [
-    {
-      "issueNumber": 126
     }
   ]
 }
