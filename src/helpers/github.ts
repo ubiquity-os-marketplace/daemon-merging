@@ -1,45 +1,5 @@
-import { PullRequest } from "@octokit/graphql-schema";
 import { retryAsync } from "ts-retry";
-import { Context, ExcludedRepos } from "../types/index";
-import { QUERY_LINKED_PULL_REQUESTS, LinkedPullRequestsResponse } from "./github-queries";
-
-/**
- * Finds pull requests that are linked to a specific issue using GitHub's GraphQL API
- */
-export async function getPullRequestsLinkedToIssue(context: Context, issueNumber: number, excludedRepos: ExcludedRepos) {
-  const { octokit, logger, payload } = context;
-
-  if (!payload.repository?.owner?.login || !payload.repository?.name) {
-    throw new Error("Repository owner or name not found in payload");
-  }
-
-  const owner = payload.repository.owner.login;
-  const repo = payload.repository.name;
-  const repoFullName = `${owner}/${repo}`;
-
-  if (excludedRepos.includes(repoFullName)) {
-    logger.warn(`Repository ${repoFullName} is in the excluded list, skipping`, {
-      excludedRepos,
-      repoFullName,
-    });
-    return [];
-  }
-
-  logger.info(`Finding pull requests linked to issue #${issueNumber} in repository ${repoFullName}`);
-
-  const response = await octokit.graphql.paginate<LinkedPullRequestsResponse>(QUERY_LINKED_PULL_REQUESTS, {
-    owner,
-    repo,
-    issueNumber,
-  });
-
-  const allEdges = response.repository?.issue?.closedByPullRequestsReferences?.edges || [];
-
-  const linkedPullRequests = allEdges.map((edge) => edge?.node).filter((pr) => pr && pr.state === "OPEN" && !pr.isDraft) as PullRequest[];
-
-  logger.info(`Found ${linkedPullRequests.length} pull requests linked to issue #${issueNumber}`, { owner, repo });
-  return linkedPullRequests;
-}
+import { Context } from "../types/index";
 
 export function parseGitHubUrl(url: string) {
   const path = new URL(url).pathname.split("/");
