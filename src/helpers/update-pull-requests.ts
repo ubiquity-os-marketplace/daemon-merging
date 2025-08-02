@@ -3,16 +3,7 @@ import ms from "ms";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
 import { Context } from "../types/index";
-import {
-  getApprovalCount,
-  getMergeTimeoutAndApprovalRequiredCount,
-  getPullRequestDetails,
-  isCiGreen,
-  IssueParams,
-  mergePullRequest,
-  parseGitHubUrl,
-  Requirements,
-} from "./github";
+import { getApprovalCount, getMergeTimeoutAndApprovalRequiredCount, isCiGreen, IssueParams, mergePullRequest, parseGitHubUrl, Requirements } from "./github";
 
 type TimelineEvent = {
   created_at?: string;
@@ -22,21 +13,18 @@ type TimelineEvent = {
   submitted_at?: string;
 };
 
-async function listAllOpenPullRequestsForRepo(context: Context): Promise<{ url: string }[]> {
+async function listAllOpenPullRequestsForRepo(context: Context) {
   const repoFullName = `${context.payload.repository.owner.login}/${context.payload.repository.name}`;
   if ((context.config.excludedRepos || []).includes(repoFullName)) {
     context.logger.info(`Repository ${repoFullName} is excluded, skipping whole-repo PR scan.`);
     return [];
   }
   const { owner, name: repo } = context.payload.repository;
-  const prList = await context.octokit.paginate(context.octokit.rest.pulls.list, {
+  return await context.octokit.paginate(context.octokit.rest.pulls.list, {
     owner: owner.login,
     repo,
     state: "open",
     per_page: 100,
-  });
-  return prList.map((pr) => {
-    return { url: pr.html_url };
   });
 }
 
@@ -84,14 +72,13 @@ export async function updatePullRequests(context: Context) {
     prs: pullRequests.map((o) => o.url),
   });
 
-  for (const { url } of pullRequests) {
+  for (const pullRequestDetails of pullRequests) {
     let isMerged = false;
     try {
-      const gitHubUrl = parseGitHubUrl(url);
-      const pullRequestDetails = await getPullRequestDetails(context, gitHubUrl);
-      logger.debug(`Processing pull-request ${url}`);
-      if (pullRequestDetails.merged || pullRequestDetails.closed_at) {
-        logger.info(`The pull request ${url} is already merged or closed, nothing to do.`);
+      const gitHubUrl = parseGitHubUrl(pullRequestDetails.html_url);
+      logger.debug(`Processing pull-request ${pullRequestDetails.html_url}`);
+      if (pullRequestDetails.merged_at || pullRequestDetails.closed_at) {
+        logger.info(`The pull request ${pullRequestDetails.html_url} is already merged or closed, nothing to do.`);
         continue;
       }
       const activity = await getAllTimelineEvents(context, gitHubUrl);
@@ -116,34 +103,34 @@ export async function updatePullRequests(context: Context) {
       });
 
       if (isNaN(lastActivityDate.getTime())) {
-        logger.info(`PR ${url} does not seem to have any activity, nothing to do.`);
+        logger.info(`PR ${pullRequestDetails.html_url} does not seem to have any activity, nothing to do.`);
       } else {
         const timeout = requirements?.mergeTimeout;
         const timeoutMs = typeof timeout === "string" ? ms(timeout) : undefined;
 
         if (!timeout || timeoutMs === undefined) {
-          logger.warn(`Invalid or missing mergeTimeout, skipping merge-time check for PR ${url}.`, {
+          logger.warn(`Invalid or missing mergeTimeout, skipping merge-time check for PR ${pullRequestDetails.html_url}.`, {
             mergeTimeout: timeout,
           });
         } else if (isPastOffset(lastActivityDate, timeout)) {
           isMerged = await attemptMerging(context, {
             gitHubUrl,
-            htmlUrl: url,
+            htmlUrl: pullRequestDetails.html_url,
             requirements: requirements as Requirements,
             lastActivityDate,
             pullRequestDetails,
           });
         } else {
-          logger.info(`PR ${url} has activity up until (${lastActivityDate}), nothing to do.`, {
+          logger.info(`PR ${pullRequestDetails.html_url} has activity up until (${lastActivityDate}), nothing to do.`, {
             lastActivityDate,
             mergeTimeout: requirements?.mergeTimeout,
           });
         }
       }
     } catch (e) {
-      logger.error(`Could not process pull-request ${url} for auto-merge: ${e}`);
+      logger.error(`Could not process pull-request ${pullRequestDetails.html_url} for auto-merge: ${e}`);
     }
-    results.push({ url: url, merged: isMerged });
+    results.push({ url: pullRequestDetails.html_url, merged: isMerged });
   }
   await generateSummary(context, results);
 }
@@ -155,7 +142,7 @@ async function attemptMerging(
     htmlUrl: string;
     requirements: Requirements;
     lastActivityDate: Date;
-    pullRequestDetails: RestEndpointMethodTypes["pulls"]["get"]["response"]["data"];
+    pullRequestDetails: RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0];
   }
 ) {
   if ((await getApprovalCount(context, data.gitHubUrl)) >= data.requirements.requiredApprovalCount) {
