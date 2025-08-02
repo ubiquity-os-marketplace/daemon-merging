@@ -19,6 +19,10 @@ export const handlers = [
       state: "open",
       locked: false,
       title: "fix: cron merging",
+      author_association: "OWNER",
+      head: {
+        sha: "1",
+      },
     });
   }),
   http.get("https://api.github.com/repos/:org/:repo/pulls/:id/merge", () => {

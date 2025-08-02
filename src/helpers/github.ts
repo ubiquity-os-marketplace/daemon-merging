@@ -116,12 +116,3 @@ export async function mergePullRequest(context: Context, { repo, owner, issue_nu
     pull_number: pullNumber,
   });
 }
-
-export async function getPullRequestDetails(context: Context, { repo, owner, issue_number: pullNumber }: IssueParams) {
-  const response = await context.octokit.rest.pulls.get({
-    repo,
-    owner,
-    pull_number: pullNumber,
-  });
-  return response.data;
-}
