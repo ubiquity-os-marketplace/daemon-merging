@@ -53,5 +53,10 @@
     {
       "issueNumber": 48
     }
+  ],
+  "ubiquity/ts-template": [
+    {
+      "issueNumber": 85
+    }
   ]
 }
