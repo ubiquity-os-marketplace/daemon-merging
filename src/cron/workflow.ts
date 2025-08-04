@@ -1,19 +1,10 @@
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
-import { Context } from "../types";
-import db from "./database-handler";
+import { Context } from "../types/index";
 
 export async function updateCronState(context: Context) {
   context.logger.debug("Updating the cron.yml workflow state.");
-  await db.update((data) => {
-    for (const key of Object.keys(data)) {
-      if (!data[key].length) {
-        delete data[key];
-      }
-    }
-    return data;
-  });
 
   if (!process.env.GITHUB_REPOSITORY) {
     context.logger.error("Can't update the Action Workflow state as GITHUB_REPOSITORY is missing from the env.");
@@ -48,7 +39,8 @@ export async function updateCronState(context: Context) {
         },
       });
     }
-    if (Object.keys(db.data).length) {
+    const hasData = await context.adapters.kv.hasData();
+    if (hasData) {
       context.logger.verbose("Enabling cron.yml workflow.", { owner, repo });
       await authOctokit.rest.actions.enableWorkflow({
         owner,

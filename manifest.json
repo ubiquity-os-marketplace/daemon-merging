@@ -1,7 +1,7 @@
 {
   "name": "Daemon merging",
   "description": "Automatically merge pull-requests.",
-  "ubiquity:listeners": ["issues.assigned", "issues.edited"],
+  "ubiquity:listeners": ["issues.assigned", "issues.edited", "issues.unassigned", "issues.closed"],
   "skipBotEvents": false,
   "configuration": {
     "type": "object",
@@ -36,29 +36,16 @@
           }
         }
       },
-      "repos": {
-        "default": {},
-        "type": "object",
-        "properties": {
-          "monitor": {
-            "default": [],
-            "description": "Repositories to watch for updates, if empty all are watched and if just owner is provided all repositories from that owner are watched.",
-            "examples": ["owner/repo", "owner"],
-            "type": "array",
-            "items": {
-              "minLength": 1,
-              "type": "string"
-            }
-          },
-          "ignore": {
-            "default": [],
-            "description": "Repositories to ignore updates from, if empty all repositories are watched and if just owner is provided all repositories from that owner are ignored",
-            "examples": ["owner/repo", "owner"],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
+      "excludedRepos": {
+        "default": [],
+        "description": "Repositories to exclude from monitoring. Must be in the format 'owner/repo' to avoid mistakenly ignoring repositories with the same name in different organizations.",
+        "examples": ["owner/repo", "another-org/repo"],
+        "type": "array",
+        "items": {
+          "pattern": "^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$",
+          "minLength": 3,
+          "description": "Repository in the format 'owner/repo'",
+          "type": "string"
         }
       },
       "allowedReviewerRoles": {

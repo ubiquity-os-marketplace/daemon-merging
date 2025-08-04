@@ -38,27 +38,18 @@ export const mergeTimeoutSchema = T.Object(
   { default: {} }
 );
 
-export const reposSchema = T.Object(
+export const excludedReposSchema = T.Array(
+  T.String({
+    pattern: "^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$",
+    minLength: 3,
+    description: "Repository in the format 'owner/repo'",
+  }),
   {
-    /**
-     * Repositories to watch for updates
-     */
-    monitor: T.Array(T.String({ minLength: 1 }), {
-      default: [],
-      description: "Repositories to watch for updates, if empty all are watched and if just owner is provided all repositories from that owner are watched.",
-      examples: ["owner/repo", "owner"],
-    }),
-    /**
-     * Repositories to ignore updates from
-     */
-    ignore: T.Array(T.String(), {
-      default: [],
-      description:
-        "Repositories to ignore updates from, if empty all repositories are watched and if just owner is provided all repositories from that owner are ignored",
-      examples: ["owner/repo", "owner"],
-    }),
-  },
-  { default: {} }
+    default: [],
+    description:
+      "Repositories to exclude from monitoring. Must be in the format 'owner/repo' to avoid mistakenly ignoring repositories with the same name in different organizations.",
+    examples: ["owner/repo", "another-org/repo"],
+  }
 );
 
 const allowedReviewerRoles = T.Array(T.String(), {
@@ -74,9 +65,9 @@ export const pluginSettingsSchema = T.Object({
   approvalsRequired: T.Optional(approvalsRequiredSchema),
   mergeTimeout: T.Optional(mergeTimeoutSchema),
   /**
-   * The list of organizations or repositories to watch for updates.
+   * Repositories to exclude from monitoring.
    */
-  repos: T.Optional(reposSchema),
+  excludedRepos: T.Optional(excludedReposSchema),
   allowedReviewerRoles: T.Optional(
     T.Transform(allowedReviewerRoles)
       .Decode((roles) => roles.map((role) => role.toUpperCase()))
@@ -85,4 +76,3 @@ export const pluginSettingsSchema = T.Object({
 });
 
 export type PluginSettings = StaticDecode<typeof pluginSettingsSchema>;
-export type ReposWatchSettings = StaticDecode<typeof reposSchema>;
