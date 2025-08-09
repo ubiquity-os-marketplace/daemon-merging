@@ -1,0 +1,33 @@
+name: Migrate DB to KV
+
+on:
+  workflow_dispatch:
+
+env:
+  DENO_KV_ACCESS_TOKEN: ${{ secrets.DENO_DEPLOY_TOKEN }}
+  DENO_KV_URL: ${{ secrets.DENO_KV_URL }}
+
+jobs:
+  migrate:
+    environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'development' }}
+    name: Migrate DB to KV
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+
+      - name: Run migration
+        run: |
+          deno run --unstable-sloppy-imports --allow-all --unstable-kv scripts/migrate-db-to-kv.ts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify migration
+        run: |
+          deno run --unstable-sloppy-imports --allow-all --unstable-kv scripts/verify-kv-data.ts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
