@@ -22,6 +22,7 @@ jobs:
 
       - name: Run migration
         run: |
+          bun install
           deno run --unstable-sloppy-imports --allow-all --unstable-kv scripts/migrate-db-to-kv.ts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
