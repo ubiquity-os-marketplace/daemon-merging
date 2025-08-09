@@ -1,22 +1,9 @@
 import { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
-import { ReturnType } from "@sinclair/typebox";
 import ms from "ms";
-import db from "../cron/database-handler";
-import { updateCronState } from "../cron/workflow";
 import { getAllTimelineEvents } from "../handlers/github-events";
 import { generateSummary, ResultInfo } from "../handlers/summary";
-import { Context, ReposWatchSettings } from "../types";
-import {
-  getApprovalCount,
-  getMergeTimeoutAndApprovalRequiredCount,
-  getOpenPullRequests,
-  getPullRequestDetails,
-  isCiGreen,
-  IssueParams,
-  mergePullRequest,
-  parseGitHubUrl,
-  Requirements,
-} from "./github";
+import { Context } from "../types/index";
+import { getApprovalCount, getMergeTimeoutAndApprovalRequiredCount, isCiGreen, IssueParams, mergePullRequest, parseGitHubUrl, Requirements } from "./github";
 
 type TimelineEvent = {
   created_at?: string;
@@ -26,21 +13,23 @@ type TimelineEvent = {
   submitted_at?: string;
 };
 
-function isTimelineEvent(event: object): event is TimelineEvent {
-  return "created_at" in event || "submitted_at" in event;
+async function listAllOpenPullRequestsForRepo(context: Context) {
+  const repoFullName = `${context.payload.repository.owner.login}/${context.payload.repository.name}`;
+  if ((context.config.excludedRepos || []).includes(repoFullName)) {
+    context.logger.info(`Repository ${repoFullName} is excluded, skipping whole-repo PR scan.`);
+    return [];
+  }
+  const { owner, name: repo } = context.payload.repository;
+  return await context.octokit.paginate(context.octokit.rest.pulls.list, {
+    owner: owner.login,
+    repo,
+    state: "open",
+    per_page: 100,
+  });
 }
 
-async function removeEntryFromDatabase(context: Context, issue: ReturnType<typeof parseGitHubUrl>) {
-  context.logger.info(`Removing entry from DB for issue`, {
-    issue,
-  });
-  await db.update((data) => {
-    const key = `${issue.owner}/${issue.repo}`;
-    if (data[key]) {
-      data[key] = data[key].filter((o) => o.issueNumber !== issue.issue_number);
-    }
-    return data;
-  });
+function isTimelineEvent(event: object): event is TimelineEvent {
+  return "created_at" in event || "updated_at" in event || "timestamp" in event || "commented_at" in event || "submitted_at" in event;
 }
 
 export async function updatePullRequests(context: Context) {
@@ -49,47 +38,50 @@ export async function updatePullRequests(context: Context) {
   const issueNumber = payload.issue.number;
 
   if (eventName === "issues.assigned") {
-    await db.update((data) => {
-      const dbKey = `${context.payload.repository.owner?.login}/${context.payload.repository.name}`;
-      if (!data[dbKey]) {
-        data[dbKey] = [];
-      }
-      if (!data[dbKey].some((o) => o.issueNumber === issueNumber)) {
-        data[dbKey].push({
-          issueNumber: issueNumber,
-        });
-      }
-      return data;
-    });
+    const repoFullName = `${context.payload.repository.owner.login}/${context.payload.repository.name}`;
+    const isExcluded = (context.config.excludedRepos || []).includes(repoFullName);
+
+    if (isExcluded) {
+      logger.info(`Issue ${issueNumber} is in an excluded repository, skipping KV registration.`, {
+        repoFullName,
+        issueUrl: payload.issue.html_url,
+      });
+      return;
+    }
+    await context.adapters.kv.addIssue(payload.issue.html_url);
     logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url });
     return;
-  }
-
-  const pullRequests = await getOpenPullRequests(context, context.config.repos as ReposWatchSettings);
-
-  if (!pullRequests?.length) {
-    logger.info("Nothing to do, clearing entry from DB.");
-    await db.update((data) => {
-      const key = `${context.payload.repository.owner}/${context.payload.repository.name}`;
-      if (data[key]) {
-        data[key] = data[key].filter((o) => o.issueNumber !== issueNumber);
-      }
-      return data;
-    });
+  } else if (eventName === "issues.unassigned" || eventName === "issues.closed") {
+    if (eventName === "issues.unassigned" && payload.issue.assignees?.length) {
+      logger.info(`Issue ${issueNumber} still has assignees, nothing to do.`);
+      return;
+    }
+    await context.adapters.kv.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
+    logger.info(`Issue ${issueNumber} had been removed from the DB.`, { url: payload.issue.html_url });
     return;
   }
 
-  for (const { html_url } of pullRequests) {
+  const pullRequests = await listAllOpenPullRequestsForRepo(context);
+
+  if (!pullRequests?.length) {
+    logger.info("No linked pull requests found, nothing to do.");
+    return;
+  }
+
+  logger.ok(`Found ${pullRequests.length} linked pull requests, will process them.`, {
+    prs: pullRequests.map((o) => o.url),
+  });
+
+  for (const pullRequestDetails of pullRequests) {
     let isMerged = false;
     try {
-      const gitHubUrl = parseGitHubUrl(html_url);
-      const pullRequestDetails = await getPullRequestDetails(context, gitHubUrl);
-      logger.debug(`Processing pull-request ${html_url} ...`);
-      if (pullRequestDetails.merged || pullRequestDetails.closed_at) {
-        logger.info(`The pull request ${html_url} is already merged or closed, nothing to do.`);
+      const gitHubUrl = parseGitHubUrl(pullRequestDetails.html_url);
+      logger.debug(`Processing pull-request ${pullRequestDetails.html_url}`);
+      if (pullRequestDetails.merged_at || pullRequestDetails.closed_at) {
+        logger.info(`The pull request ${pullRequestDetails.html_url} is already merged or closed, nothing to do.`);
         continue;
       }
-      const activity = await getAllTimelineEvents(context, parseGitHubUrl(html_url));
+      const activity = await getAllTimelineEvents(context, gitHubUrl);
       const eventDates: Date[] = activity.reduce<Date[]>((acc, event) => {
         if (isTimelineEvent(event)) {
           const date = new Date(event.created_at || event.updated_at || event.timestamp || event.commented_at || event.submitted_at || "");
@@ -100,40 +92,47 @@ export async function updatePullRequests(context: Context) {
         return acc;
       }, []);
 
-      const lastActivityDate = new Date(Math.max(...eventDates.map((date) => date.getTime())));
+      const lastActivityDate =
+        eventDates.length > 0
+          ? new Date(Math.max(...eventDates.map((date) => date.getTime())))
+          : new Date(pullRequestDetails.updated_at || pullRequestDetails.created_at || "");
 
       const requirements = await getMergeTimeoutAndApprovalRequiredCount(context, pullRequestDetails.author_association);
-      logger.debug(
-        `Requirements according to association ${pullRequestDetails.author_association}: ${JSON.stringify(requirements)} with last activity date: ${lastActivityDate}`
-      );
+      logger.debug(`Requirements according to association ${pullRequestDetails.author_association} with last activity date: ${lastActivityDate}`, {
+        requirements,
+      });
+
       if (isNaN(lastActivityDate.getTime())) {
-        logger.info(`PR ${html_url} does not seem to have any activity, nothing to do.`);
-      } else if (requirements?.mergeTimeout && isPastOffset(lastActivityDate, requirements?.mergeTimeout)) {
-        isMerged = await attemptMerging(context, {
-          gitHubUrl,
-          htmlUrl: html_url,
-          requirements: requirements as Requirements,
-          lastActivityDate,
-          pullRequestDetails,
-        });
-        await removeEntryFromDatabase(context, {
-          repo: context.payload.repository.name,
-          owner: `${context.payload.repository.owner.login}`,
-          issue_number: issueNumber,
-        });
+        logger.info(`PR ${pullRequestDetails.html_url} does not seem to have any activity, nothing to do.`);
       } else {
-        logger.info(`PR ${html_url} has activity up until (${lastActivityDate}), nothing to do.`, {
-          lastActivityDate,
-          mergeTimeout: requirements?.mergeTimeout,
-        });
+        const timeout = requirements?.mergeTimeout;
+        const timeoutMs = typeof timeout === "string" ? ms(timeout) : undefined;
+
+        if (!timeout || timeoutMs === undefined) {
+          logger.warn(`Invalid or missing mergeTimeout, skipping merge-time check for PR ${pullRequestDetails.html_url}.`, {
+            mergeTimeout: timeout,
+          });
+        } else if (isPastOffset(lastActivityDate, timeout)) {
+          isMerged = await attemptMerging(context, {
+            gitHubUrl,
+            htmlUrl: pullRequestDetails.html_url,
+            requirements: requirements as Requirements,
+            lastActivityDate,
+            pullRequestDetails,
+          });
+        } else {
+          logger.info(`PR ${pullRequestDetails.html_url} has activity up until (${lastActivityDate}), nothing to do.`, {
+            lastActivityDate,
+            mergeTimeout: requirements?.mergeTimeout,
+          });
+        }
       }
     } catch (e) {
-      logger.error(`Could not process pull-request ${html_url} for auto-merge: ${e}`);
+      logger.error(`Could not process pull-request ${pullRequestDetails.html_url} for auto-merge: ${e}`);
     }
-    results.push({ url: html_url, merged: isMerged });
+    results.push({ url: pullRequestDetails.html_url, merged: isMerged });
   }
   await generateSummary(context, results);
-  await updateCronState(context);
 }
 
 async function attemptMerging(
@@ -143,7 +142,7 @@ async function attemptMerging(
     htmlUrl: string;
     requirements: Requirements;
     lastActivityDate: Date;
-    pullRequestDetails: RestEndpointMethodTypes["pulls"]["get"]["response"]["data"];
+    pullRequestDetails: RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0];
   }
 ) {
   if ((await getApprovalCount(context, data.gitHubUrl)) >= data.requirements.requiredApprovalCount) {

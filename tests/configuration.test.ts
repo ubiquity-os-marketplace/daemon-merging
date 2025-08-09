@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { server } from "./__mocks__/node";
-import { pluginSettingsSchema } from "../src/types";
+import { pluginSettingsSchema } from "../src/types/index";
 import { Value } from "@sinclair/typebox/value";
 
 beforeAll(() => server.listen());

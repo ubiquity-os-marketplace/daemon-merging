@@ -19,6 +19,10 @@ export const handlers = [
       state: "open",
       locked: false,
       title: "fix: cron merging",
+      author_association: "OWNER",
+      head: {
+        sha: "1",
+      },
     });
   }),
   http.get("https://api.github.com/repos/:org/:repo/pulls/:id/merge", () => {
@@ -53,5 +57,45 @@ export const handlers = [
   }),
   http.put("https://api.github.com/repos/:owner/:repo/actions/workflows/:workflow/enable", () => {
     return HttpResponse.json();
+  }),
+  http.post("https://api.github.com/graphql", () => {
+    return HttpResponse.json({
+      data: {
+        repository: {
+          issue: {
+            id: "I_1",
+            closedByPullRequestsReferences: {
+              edges: [
+                {
+                  node: {
+                    id: "PR_1",
+                    title: "Test PR",
+                    number: 1,
+                    url: "https://github.com/ubiquity-os-marketplace/daemon-merging/pull/1",
+                    state: "OPEN",
+                    isDraft: false,
+                    author: {
+                      login: "test-user",
+                    },
+                    repository: {
+                      id: "R_1",
+                      owner: {
+                        id: "O_1",
+                        login: "ubiquity-os-marketplace",
+                      },
+                      name: "daemon-merging",
+                    },
+                  },
+                },
+              ],
+              pageInfo: {
+                hasNextPage: false,
+                endCursor: null,
+              },
+            },
+          },
+        },
+      },
+    });
   }),
 ];

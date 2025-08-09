@@ -1,9 +1,14 @@
-name: "Automated Merging"
+name: "Daemon Merging"
 description: "Watch user's activity."
 outputs:
   result:
     description: "Conditionally merge pull requests after a timeout."
     value: ${{ steps.main.outputs.result }}
 runs:
-  using: "node20"
-  main: "dist/index.js"
+  using: "composite"
+  steps:
+    - name: Setup Deno
+      uses: denoland/setup-deno@v2
+    - name: Run main script
+      shell: bash
+      run: deno run --unstable-sloppy-imports --allow-all --unstable-kv dist/index.js
