@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.1](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.1.0...v2.1.1) (2025-08-17)
+
+
+### Bug Fixes
+
+* introduced KV adapters for handling database operations ([0273e62](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/0273e62f73b653b966e638f3a877219d4e802920))
+* release please issue permission ([fde01ad](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/fde01ad94961b6710c05a74294e0db2c46c00d42))
+* release please issue permission ([416d28e](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/416d28e6178c1b2a8f942f17ec870106e25a1ed1))
+
 ## [2.1.0](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.0.1...v2.1.0) (2025-07-10)
 
 
