@@ -1,6 +1,6 @@
 {
   "name": "@ubiquity-os/daemon-merging",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "Conditionally merge pull requests after a timeout.",
   "author": "Ubiquity DAO",
   "license": "MIT",

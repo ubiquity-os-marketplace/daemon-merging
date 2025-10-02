@@ -109,7 +109,7 @@ export async function updatePullRequests(context: Context) {
         const timeoutMs = typeof timeout === "string" ? ms(timeout) : undefined;
 
         if (!timeout || timeoutMs === undefined) {
-          logger.warn(`Invalid or missing mergeTimeout, skipping merge-time check for PR ${pullRequestDetails.html_url}.`, {
+          logger.warn(`Invalid or missing mergeTimeout, skipping merge-time check for PR ${pullRequestDetails.html_url}`, {
             mergeTimeout: timeout,
           });
         } else if (isPastOffset(lastActivityDate, timeout)) {
