@@ -37,7 +37,7 @@ export async function updatePullRequests(context: Context) {
   const results: ResultInfo[] = [];
   const issueNumber = payload.issue.number;
 
-  if (eventName === "issues.assigned") {
+  if (eventName === "issues.assigned" || eventName === "issues.reopened") {
     const repoFullName = `${context.payload.repository.owner.login}/${context.payload.repository.name}`;
     const isExcluded = (context.config.excludedRepos || []).includes(repoFullName);
 
@@ -45,11 +45,12 @@ export async function updatePullRequests(context: Context) {
       logger.info(`Issue ${issueNumber} is in an excluded repository, skipping KV registration.`, {
         repoFullName,
         issueUrl: payload.issue.html_url,
+        eventName,
       });
       return;
     }
     await context.adapters.kv.addIssue(payload.issue.html_url);
-    logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url });
+    logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url, eventName });
     return;
   } else if (eventName === "issues.unassigned" || eventName === "issues.closed") {
     if (eventName === "issues.unassigned" && payload.issue.assignees?.length) {
