@@ -5,12 +5,22 @@ import { customOctokit as Octokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import { http, HttpResponse } from "msw";
 import * as githubHelpers from "../src/helpers/github";
+import { KV_PREFIX } from "../src/adapters/kv-database-handler";
 import { Context, pluginSettingsSchema } from "../src/types/index";
 import { db } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import seed from "./__mocks__/seed.json";
 
 const mergePullRequest = jest.fn();
+
+type KvMock = {
+  _data: Map<string, unknown>;
+  get(key: string[]): Promise<{ value: unknown | null }>;
+  set(key: string[], value: unknown): Promise<void>;
+  delete(key: string[]): Promise<void>;
+  list(options: { prefix: string[] }): AsyncIterable<{ key: string[]; value: unknown }>;
+  close(): void;
+};
 
 beforeAll(async () => {
   server.listen();
@@ -71,6 +81,37 @@ describe("Action tests", () => {
     });
     await expect(plugin(context)).resolves.toEqual(undefined);
     expect(mergePullRequest).not.toHaveBeenCalled();
+  });
+
+  it("Should register a reopened issue in KV", async () => {
+    const kv = (await Deno.openKv()) as unknown as KvMock;
+    kv._data.clear();
+
+    const plugin = (await import("../src/plugin")).plugin;
+    const baseContext = createContext({ repos: { monitor: [monitor], ignore: [] } });
+
+    const owner = baseContext.payload.repository.owner.login;
+    const repo = baseContext.payload.repository.name;
+    const issueNumber = 42;
+    const context = {
+      ...baseContext,
+      eventName: "issues.reopened",
+      payload: {
+        ...baseContext.payload,
+        issue: {
+          ...baseContext.payload.issue,
+          html_url: `https://github.com/${owner}/${repo}/issues/${issueNumber}`,
+          number: issueNumber,
+        },
+      },
+    } as Context<"issues.reopened">;
+
+    await expect(plugin(context)).resolves.toEqual(undefined);
+
+    const { value } = await kv.get([KV_PREFIX, owner, repo]);
+    expect(value).toEqual([issueNumber]);
+
+    kv._data.clear();
   });
 
   it("Should close a PR that is past the threshold", async () => {

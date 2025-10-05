@@ -31,6 +31,18 @@ const mockKv = {
   },
 };
 
-global.Deno = {
-  openKv: () => Promise.resolve(mockKv),
-} as unknown as typeof Deno;
+function mockOpenKv() {
+  return Promise.resolve(mockKv);
+}
+
+if (globalThis.Deno) {
+  Object.defineProperty(globalThis.Deno, "openKv", {
+    value: mockOpenKv,
+    writable: true,
+    configurable: true,
+  });
+} else {
+  globalThis.Deno = {
+    openKv: mockOpenKv,
+  } as unknown as typeof Deno;
+}
