@@ -7,11 +7,7 @@ const cfg: Config = {
   coveragePathIgnorePatterns: ["node_modules", "mocks"],
   collectCoverage: true,
   coverageReporters: ["json", "lcov", "text", "clover", "json-summary"],
-  reporters: [
-    "default",
-    "jest-junit",
-    ["jest-md-dashboard", { output: "CI/test-dashboard.md" }],
-  ],
+  reporters: ["default", "jest-junit", ["jest-md-dashboard", { output: "CI/test-dashboard.md" }]],
   coverageDirectory: "coverage",
   transformIgnorePatterns: [],
   transform: {

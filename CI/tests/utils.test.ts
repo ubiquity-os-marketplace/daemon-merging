@@ -118,9 +118,7 @@ describe("Utility functions", () => {
 
     it("Should skip empty strings", () => {
       const validDate = DATE_STRING_1;
-      // eslint-disable-next-line @ubiquity-os/no-empty-strings
-      const result = firstValidTimestamp(["", validDate]);
-
+      const result = firstValidTimestamp(["  ", validDate]);
       expect(result).toBeInstanceOf(Date);
       expect(result?.toISOString()).toBe(DATE_STRING_2);
     });
