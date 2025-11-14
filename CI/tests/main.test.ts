@@ -3,7 +3,6 @@ import { drop } from "@mswjs/data";
 import { runAutoMerge } from "../src/main";
 import { db, resetState, setMergeStatus, setShouldFailInstallation, setShouldFailMerge, setShouldFailRepoList } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
-
 import { Octokit } from "@octokit/rest";
 
 const ACTIVE_REPO = "active-repo";

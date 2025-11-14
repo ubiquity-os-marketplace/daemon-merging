@@ -3,13 +3,12 @@ import { drop } from "@mswjs/data";
 import { createAppClient, authenticateOrganization, getDevelopmentBranch, listOrgRepos, mergeDevIntoMain } from "../src/github";
 import { db, resetState, setMergeStatus } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
+import { Octokit } from "@octokit/rest";
 
 const TEST_APP_ID = "123456";
 const TEST_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----MIIEpAIBAAKCAQE-----END RSA PRIVATE KEY-----`;
 const TEST_ORG = "test-org";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-import { Octokit } from "@octokit/rest";
 
 jest.mock("../src/github", () => {
   const actual = jest.requireActual("../src/github");
