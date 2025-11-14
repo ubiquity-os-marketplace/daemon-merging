@@ -17,9 +17,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Jest With Coverage
-        run: bun install --frozen-lockfile && bun run test
+      - name: Install deps
+        run: bun install --frozen-lockfile
 
-      - name: Add Jest Report to Summary
+      - name: Run Main Jest Suite
+        run: bun run test
+
+      - name: Run CI Jest Suite
+        run: bun run test:ci
+
+      - name: Add Jest Report to Summary (Main)
         if: always()
         run: echo "$(cat test-dashboard.md)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Add Jest Report to Summary (CI)
+        if: always()
+        run: echo "$(cat CI/test-dashboard.md)" >> $GITHUB_STEP_SUMMARY
