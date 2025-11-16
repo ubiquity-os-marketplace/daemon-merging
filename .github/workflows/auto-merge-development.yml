@@ -7,7 +7,7 @@ on:
 
 env:
   TARGET_ORGS: '["ubiquity", "ubiquity-os", "ubiquity-os-marketplace", "ubiquity-research", "devpool-directory"]'
-  INACTIVITY_DAYS: "120"
+  INACTIVITY_DAYS: "90"
 
 jobs:
   auto-merge:
@@ -16,7 +16,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -32,4 +32,4 @@ jobs:
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
           TARGET_ORGS: ${{ env.TARGET_ORGS }}
           INACTIVITY_DAYS: ${{ env.INACTIVITY_DAYS }}
-        run: bunx tsx src/cli.ts
+        run: bun run CI/src/cli.ts
