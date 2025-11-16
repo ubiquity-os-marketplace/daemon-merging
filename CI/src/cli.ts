@@ -13,10 +13,10 @@ async function main(): Promise<void> {
   for (const o of result.outcomes) {
     switch (o.status) {
       case "merged":
-        console.log(`✅ ${o.org}/${o.repo}: merged development into main (${o.sha}).`);
+        console.log(`✅ ${o.org}/${o.repo}: merged ${o.defaultBranch} into main (${o.sha}).`);
         break;
       case "up-to-date":
-        console.log(`ℹ️  ${o.org}/${o.repo}: main already contains development.`);
+        console.log(`ℹ️  ${o.org}/${o.repo}: main already contains ${o.defaultBranch}.`);
         break;
       case "conflict":
         console.log(`⚠️  ${o.org}/${o.repo}: merge conflict detected.`);

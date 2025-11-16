@@ -1,10 +1,11 @@
 import { Octokit as Core } from "@octokit/core";
 import { createAppAuth } from "@octokit/auth-app";
 import { paginateRest } from "@octokit/plugin-paginate-rest";
-import { restEndpointMethods, RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";
+import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import { retry } from "@octokit/plugin-retry";
 import { throttling } from "@octokit/plugin-throttling";
 import { normalizePrivateKey } from "./utils";
+import { BranchData, Octokit, RepositoryInfo } from "./types";
 
 export const customOctokit = Core.plugin(retry, throttling, restEndpointMethods, paginateRest).defaults({
   throttle: {
@@ -19,10 +20,6 @@ export const customOctokit = Core.plugin(retry, throttling, restEndpointMethods,
   },
 });
 
-export type Octokit = InstanceType<typeof customOctokit>;
-export type RepoData = RestEndpointMethodTypes["repos"]["listForOrg"]["response"]["data"][number];
-export type BranchData = RestEndpointMethodTypes["repos"]["getBranch"]["response"]["data"];
-
 /**
  * Creates an authenticated GitHub App client
  */
@@ -30,7 +27,6 @@ export function createAppClient(appId: string, privateKey: string): Octokit {
   return new customOctokit({
     authStrategy: createAppAuth,
     auth: { appId, privateKey: normalizePrivateKey(privateKey) },
-    userAgent: "ubiquity-auto-merge/1.0",
   });
 }
 
@@ -43,8 +39,11 @@ export async function authenticateOrganization(appClient: Octokit, org: string, 
 
     return new customOctokit({
       authStrategy: createAppAuth,
-      auth: { appId, privateKey: normalizePrivateKey(privateKey), installationId: data.id },
-      userAgent: "ubiquity-auto-merge/1.0",
+      auth: {
+        appId,
+        privateKey: normalizePrivateKey(privateKey),
+        installationId: data.id,
+      },
     });
   } catch (error) {
     console.error(`[Auto-Merge] Failed to authenticate for org ${org}:`, error instanceof Error ? error.message : String(error));
@@ -53,47 +52,71 @@ export async function authenticateOrganization(appClient: Octokit, org: string, 
 }
 
 /**
- * Lists all repositories in an organization
+ * Fetch all repositories for an organization
  */
-export async function listOrgRepos(octokit: Octokit, org: string): Promise<RepoData[]> {
-  const repos: RepoData[] = [];
-  for (let page = 1; page <= 10; page++) {
-    const { data } = await octokit.rest.repos.listForOrg({ org, per_page: 100, page });
-    if (!Array.isArray(data) || data.length === 0) break;
-    repos.push(...data);
-    if (data.length < 100) break;
-  }
-  return repos;
-}
-
-/**
- * Gets the development branch for a repository
- */
-export async function getDevelopmentBranch(octokit: Octokit, owner: string, repo: string): Promise<BranchData | null> {
+export async function listOrgRepos(octokit: Octokit, org: string): Promise<RepositoryInfo[] | null> {
   try {
-    const { data } = await octokit.rest.repos.getBranch({ owner, repo, branch: "development" });
-    return data;
-  } catch {
+    return await octokit.paginate(octokit.rest.repos.listForOrg, {
+      org,
+      per_page: 100,
+    });
+  } catch (error) {
+    console.error(`[Auto-Merge] Failed to list repos for ${org}:`, error instanceof Error ? error.message : String(error));
     return null;
   }
 }
 
 /**
- * Merges development branch into main
+ * Gets the default branch for a repository
  */
-export async function mergeDevIntoMain(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  inactivityDays: number
-): Promise<{ status: 201 | 204 | 409; sha?: string }> {
+export async function getDefaultBranch({
+  defaultBranch,
+  octokit,
+  owner,
+  repo,
+}: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  defaultBranch: string;
+}): Promise<BranchData | null> {
+  try {
+    const { data } = await octokit.rest.repos.getBranch({
+      owner,
+      repo,
+      branch: defaultBranch,
+    });
+    return data as BranchData;
+  } catch (error) {
+    console.error(`[Auto-Merge] Failed to get default branch for ${owner}/${repo}:`, error instanceof Error ? error.message : String(error));
+    return null;
+  }
+}
+
+/**
+ * Merges default branch into main
+ */
+export async function mergeDefaultIntoMain({
+  octokit,
+  owner,
+  repo,
+  inactivityDays,
+  defaultBranch,
+}: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  inactivityDays: number;
+  defaultBranch: string;
+}): Promise<{ status: 201 | 204 | 409; sha?: string }> {
   try {
     const res = await octokit.rest.repos.merge({
       owner,
       repo,
+      // Base is main; head is the provided defaultBranch we want to merge from
       base: "main",
-      head: "development",
-      commit_message: `Automated merge from development to main after ${inactivityDays} days of inactivity`,
+      head: defaultBranch,
+      commit_message: `Automated merge from ${defaultBranch} to main after ${inactivityDays} days of inactivity`,
     });
     const status = res.status as 201 | 204;
     const sha = (res.data as { sha?: string } | undefined)?.sha;
@@ -105,13 +128,29 @@ export async function mergeDevIntoMain(
   }
 }
 
-export async function createMainBranch(octokit: Octokit, org: string, repoName: string): Promise<void> {
+export async function createMainBranch({
+  octokit,
+  org,
+  repoName,
+  defaultBranch,
+}: {
+  octokit: Octokit;
+  org: string;
+  repoName: string;
+  defaultBranch: string;
+}): Promise<void> {
   try {
-    await octokit.rest.repos.getBranch({ owner: org, repo: repoName, branch: "main" });
+    await octokit.rest.repos.getBranch({
+      owner: org,
+      repo: repoName,
+      branch: "main",
+    });
   } catch {
-    // Main branch does not exist, create it from development
-    // required for QA
-    const devBranch = await octokit.rest.repos.getBranch({ owner: org, repo: repoName, branch: "development" });
+    const devBranch = await octokit.rest.repos.getBranch({
+      owner: org,
+      repo: repoName,
+      branch: defaultBranch,
+    });
     const devSha = devBranch.data.commit.sha;
 
     await octokit.rest.git.createRef({
@@ -121,7 +160,7 @@ export async function createMainBranch(octokit: Octokit, org: string, repoName: 
       sha: devSha,
     });
 
-    console.log(`[Auto-Merge] Created main branch for ${org}/${repoName} from development`);
+    console.log(`[Auto-Merge] Created main branch for ${org}/${repoName} from ${defaultBranch}`);
   }
 }
 
