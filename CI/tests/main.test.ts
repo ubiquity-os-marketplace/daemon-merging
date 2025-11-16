@@ -81,7 +81,7 @@ describe("runAutoMerge", () => {
       name: "archived-repo",
       archived: true,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -106,7 +106,7 @@ describe("runAutoMerge", () => {
       name: "no-dev-branch",
       archived: false,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -120,7 +120,7 @@ describe("runAutoMerge", () => {
     const noDevOutcome = result.outcomes.find((o) => o.repo === "no-dev-branch");
     expect(noDevOutcome).toMatchObject({
       status: "skipped",
-      reason: "Development branch missing",
+      reason: "development branch missing",
     });
   });
 
@@ -131,7 +131,7 @@ describe("runAutoMerge", () => {
       name: ACTIVE_REPO,
       archived: false,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -214,7 +214,7 @@ describe("runAutoMerge", () => {
       name: CUSTOM_THRESHOLD_REPO,
       archived: false,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -308,7 +308,7 @@ describe("runAutoMerge", () => {
       name: "second-org-repo",
       archived: false,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -341,7 +341,7 @@ describe("runAutoMerge", () => {
       name: NO_DATE_REPO,
       archived: false,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -384,7 +384,7 @@ describe("runAutoMerge", () => {
       name: "this-repo",
       archived: false,
       fork: true,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: "upstream-owner/this-repo" },
     });
 
@@ -415,7 +415,7 @@ describe("runAutoMerge", () => {
       name: "second-inactive-repo",
       archived: false,
       fork: false,
-      default_branch: "main",
+      default_branch: "development",
       parent: { full_name: null },
     });
 
@@ -456,7 +456,7 @@ function setupDefaultTestData() {
     name: INACTIVE_REPO,
     archived: false,
     fork: false,
-    default_branch: "main",
+    default_branch: "development",
     parent: { full_name: null },
   });
 

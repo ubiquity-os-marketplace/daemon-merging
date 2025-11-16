@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { drop } from "@mswjs/data";
 import { forkSafetyGuard } from "../src/guards";
-import type { Octokit } from "../src/github";
 import { db, resetState } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
+import type { Octokit } from "../src/types";
 
 const FORK_OWNER = "fork-owner";
 const THIS_REPO = "this-repo";

@@ -100,6 +100,13 @@ export const handlers = [
     const end = start + perPage;
     const paginatedRepos = repos.slice(start, end);
 
+    const hasMore = end < repos.length;
+    const nextPage = hasMore ? page + 1 : undefined;
+    const headers = new Headers();
+    if (nextPage) {
+      headers.set("Link", `<https://api.github.com/orgs/${org}/repos?page=${nextPage}&per_page=${perPage}>; rel="next"`);
+    }
+
     return HttpResponse.json(
       paginatedRepos.map((repo) => ({
         id: repo.id,
@@ -108,7 +115,8 @@ export const handlers = [
         archived: repo.archived,
         fork: repo.fork,
         default_branch: repo.default_branch,
-      }))
+      })),
+      { headers }
     );
   }),
 

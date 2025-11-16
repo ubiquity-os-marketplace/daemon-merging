@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "@jest/globals";
 import { drop } from "@mswjs/data";
-import { createAppClient, authenticateOrganization, getDevelopmentBranch, listOrgRepos, mergeDevIntoMain } from "../src/github";
+import { authenticateOrganization, createAppClient, getDefaultBranch, listOrgRepos, mergeDefaultIntoMain } from "../src/github";
 import { db, resetState, setMergeStatus } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import { Octokit } from "@octokit/rest";
@@ -70,17 +70,17 @@ describe("GitHub API wrappers", () => {
 
     it("Should create an installation-specific client", async () => {
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const installationClient = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
 
-      expect(installationClient).toBeDefined();
-      expect(installationClient.rest).toBeDefined();
+      expect(octokit).toBeDefined();
+      expect(octokit.rest).toBeDefined();
     });
 
     it("Should throw error for non-existent organization", async () => {
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const installationClient = await authenticateOrganization(appClient, "non-existent-org", TEST_APP_ID, TEST_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, "non-existent-org", TEST_APP_ID, TEST_PRIVATE_KEY);
 
-      expect(installationClient).toBeDefined();
+      expect(octokit).toBeDefined();
     });
   });
 
@@ -110,8 +110,12 @@ describe("GitHub API wrappers", () => {
 
     it("Should list all repositories in an organization", async () => {
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const repos = await listOrgRepos(client, TEST_ORG);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const repos = await listOrgRepos(octokit, TEST_ORG);
+
+      if (!repos) {
+        throw new Error("Repos should not be null");
+      }
 
       expect(repos).toHaveLength(5);
       expect(repos[0]).toHaveProperty("name");
@@ -120,8 +124,12 @@ describe("GitHub API wrappers", () => {
 
     it("Should include archived repositories in the list", async () => {
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const repos = await listOrgRepos(client, TEST_ORG);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const repos = await listOrgRepos(octokit, TEST_ORG);
+
+      if (!repos) {
+        throw new Error("Repos should not be null");
+      }
 
       const archivedRepos = repos.filter((r) => r.archived);
       expect(archivedRepos).toHaveLength(1);
@@ -136,8 +144,8 @@ describe("GitHub API wrappers", () => {
       });
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, "empty-org", TEST_APP_ID, TEST_PRIVATE_KEY);
-      const repos = await listOrgRepos(client, "empty-org");
+      const octokit = await authenticateOrganization(appClient, "empty-org", TEST_APP_ID, TEST_PRIVATE_KEY);
+      const repos = await listOrgRepos(octokit, "empty-org");
 
       expect(repos).toHaveLength(0);
     });
@@ -166,14 +174,14 @@ describe("GitHub API wrappers", () => {
       }
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, "large-org", TEST_APP_ID, TEST_PRIVATE_KEY);
-      const repos = await listOrgRepos(client, "large-org");
+      const octokit = await authenticateOrganization(appClient, "large-org", TEST_APP_ID, TEST_PRIVATE_KEY);
+      const repos = await listOrgRepos(octokit, "large-org");
 
       expect(repos).toHaveLength(150);
     });
   });
 
-  describe("getDevelopmentBranch", () => {
+  describe("getDefaultBranch", () => {
     beforeEach(() => {
       db.installations.create({
         id: 1,
@@ -187,7 +195,7 @@ describe("GitHub API wrappers", () => {
         name: "test-repo",
         archived: false,
         fork: false,
-        default_branch: "main",
+        default_branch: "development",
         parent: {
           full_name: null,
         },
@@ -205,10 +213,20 @@ describe("GitHub API wrappers", () => {
       });
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const branch = await getDevelopmentBranch(client, TEST_ORG, "test-repo");
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const branch = await getDefaultBranch({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        defaultBranch: "development",
+      });
 
       expect(branch).toBeDefined();
+
+      if (!branch || typeof branch === "string") {
+        throw new Error("Branch should not be null or a string");
+      }
+
       expect(branch?.name).toBe("development");
       expect(branch?.commit.sha).toBe("test-sha-123");
       expect(branch?.commit.commit.committer?.date).toBeTruthy();
@@ -216,8 +234,13 @@ describe("GitHub API wrappers", () => {
 
     it("Should return null when development branch does not exist", async () => {
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const branch = await getDevelopmentBranch(client, TEST_ORG, "test-repo");
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const branch = await getDefaultBranch({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        defaultBranch: "development",
+      });
 
       expect(branch).toBeNull();
     });
@@ -234,15 +257,23 @@ describe("GitHub API wrappers", () => {
       });
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const branch = await getDevelopmentBranch(client, TEST_ORG, "test-repo");
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const branch = await getDefaultBranch({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        defaultBranch: "development",
+      });
+      if (!branch || typeof branch === "string") {
+        throw new Error("Branch should not be null or a string");
+      }
 
       expect(branch?.commit.commit.committer?.date).toBe(testDate);
       expect(branch?.commit.commit.author?.date).toBe(testDate);
     });
   });
 
-  describe("mergeDevIntoMain", () => {
+  describe("mergeDefaultIntoMain", () => {
     beforeEach(() => {
       db.installations.create({
         id: 1,
@@ -256,7 +287,7 @@ describe("GitHub API wrappers", () => {
         name: "test-repo",
         archived: false,
         fork: false,
-        default_branch: "main",
+        default_branch: "development",
         parent: {
           full_name: null,
         },
@@ -267,8 +298,14 @@ describe("GitHub API wrappers", () => {
       setMergeStatus(201);
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const result = await mergeDevIntoMain(client, TEST_ORG, "test-repo", 90);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const result = await mergeDefaultIntoMain({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        inactivityDays: 90,
+        defaultBranch: "development",
+      });
 
       expect(result.status).toBe(201);
       expect(result.sha).toBeDefined();
@@ -279,8 +316,14 @@ describe("GitHub API wrappers", () => {
       setMergeStatus(204);
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const result = await mergeDevIntoMain(client, TEST_ORG, "test-repo", 90);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const result = await mergeDefaultIntoMain({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        inactivityDays: 90,
+        defaultBranch: "development",
+      });
 
       expect(result.status).toBe(204);
       expect(result.sha).toBeUndefined();
@@ -290,8 +333,14 @@ describe("GitHub API wrappers", () => {
       setMergeStatus(409);
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      const result = await mergeDevIntoMain(client, TEST_ORG, "test-repo", 90);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const result = await mergeDefaultIntoMain({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        inactivityDays: 90,
+        defaultBranch: "development",
+      });
 
       expect(result.status).toBe(409);
       expect(result.sha).toBeUndefined();
@@ -301,8 +350,14 @@ describe("GitHub API wrappers", () => {
       setMergeStatus(201);
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      await mergeDevIntoMain(client, TEST_ORG, "test-repo", 90);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      await mergeDefaultIntoMain({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        inactivityDays: 90,
+        defaultBranch: "development",
+      });
 
       const merge = db.merges.findFirst({
         where: { owner: { equals: TEST_ORG }, repo: { equals: "test-repo" } },
@@ -316,23 +371,35 @@ describe("GitHub API wrappers", () => {
       setMergeStatus(201);
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      await mergeDevIntoMain(client, TEST_ORG, "test-repo", 90);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      await mergeDefaultIntoMain({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        inactivityDays: 90,
+        defaultBranch: "main",
+      });
 
       const merge = db.merges.findFirst({
         where: { owner: { equals: TEST_ORG }, repo: { equals: "test-repo" } },
       });
 
       expect(merge?.base).toBe("main");
-      expect(merge?.head).toBe("development");
+      expect(merge?.head).toBe("main");
     });
 
     it("Should work with custom inactivity threshold", async () => {
       setMergeStatus(201);
 
       const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const client = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
-      await mergeDevIntoMain(client, TEST_ORG, "test-repo", 30);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      await mergeDefaultIntoMain({
+        octokit,
+        owner: TEST_ORG,
+        repo: "test-repo",
+        inactivityDays: 30,
+        defaultBranch: "development",
+      });
 
       const merge = db.merges.findFirst({
         where: { owner: { equals: TEST_ORG }, repo: { equals: "test-repo" } },
