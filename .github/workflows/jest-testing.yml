@@ -5,8 +5,8 @@ on:
 
 env:
   NODE_ENV: "test"
-  APP_ID: ${{ secrets.APP_ID }}
-  APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+  APP_ID: "123456"
+  APP_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBeAKCAQEAtFJ5Uj1ovTLPM7Jpy\n-----END RSA PRIVATE KEY-----"
   TARGET_ORGS: '["test-org"]'
   INACTIVITY_DAYS: '90'
   LOG_LEVEL: 'info'
