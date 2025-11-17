@@ -7,6 +7,15 @@ export type AutoMergeOptions = {
   inactivityDays?: number; // default 90
 };
 
+export type MergeError = {
+  scope: "org" | "repo";
+  org: string;
+  repo?: string;
+  url: string;
+  reason: string;
+  stage: "authenticate" | "list-repos" | "merge" | "unknown";
+};
+
 export type MergeOutcome =
   | { status: "merged"; org: string; repo: string; defaultBranch: string; sha: string }
   | { status: "up-to-date"; org: string; repo: string; defaultBranch: string }
@@ -16,12 +25,11 @@ export type MergeOutcome =
 export type AutoMergeResult = {
   outcomes: MergeOutcome[];
   errors: number;
+  errorsDetail: MergeError[]; 
 };
 
 export type ForkGuardResult = { safe: true } | { safe: false; reason: string };
 
 export type RepositoryInfo = RestEndpointMethodTypes["repos"]["listForOrg"]["response"]["data"][number];
 export type BranchData = RestEndpointMethodTypes["repos"]["getBranch"]["response"]["data"];
-export type RepoData = RestEndpointMethodTypes["repos"]["listForOrg"]["response"]["data"][number];
-
 export type Octokit = InstanceType<typeof import("./github").customOctokit>;

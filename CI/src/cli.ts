@@ -1,13 +1,10 @@
+import { loadConfigEnv } from "./env";
 import { runAutoMerge } from "./main";
-import { logger, parseOrgs, requireEnv } from "./utils";
+import { logger } from "./utils";
+import { writeGithubSummary } from "./summary";
 
 async function main(): Promise<void> {
-  const appId = requireEnv("APP_ID");
-  const privateKey = requireEnv("APP_PRIVATE_KEY");
-  const orgs = parseOrgs(requireEnv("TARGET_ORGS"));
-  const inactivityDaysRaw = process.env.INACTIVITY_DAYS;
-  const inactivityDays = inactivityDaysRaw ? Number.parseInt(inactivityDaysRaw, 10) : undefined;
-
+  const { APP_ID: appId, APP_PRIVATE_KEY: privateKey, TARGET_ORGS: orgs, INACTIVITY_DAYS: inactivityDays } = loadConfigEnv();
   const result = await runAutoMerge({ appId, privateKey, orgs, inactivityDays });
 
   for (const o of result.outcomes) {
@@ -27,9 +24,8 @@ async function main(): Promise<void> {
     }
   }
 
-  if (result.errors > 0) {
-    process.exitCode = 1;
-  }
+  await writeGithubSummary(result.outcomes, result.errors, result.errorsDetail);
+  if (result.errors > 0) process.exitCode = 1;
 }
 
 main().catch((err) => {

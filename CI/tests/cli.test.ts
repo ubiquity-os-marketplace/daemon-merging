@@ -2,12 +2,27 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest 
 import { drop } from "@mswjs/data";
 import { db, resetState } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
-import { requireEnv } from "../src/utils";
+import { CiEnv, loadConfigEnv } from "../src/env";
 
 const TEST_APP_ID = "123456";
-
+const TEST_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----MIIEpA-----END RSA PRIVATE KEY-----`;
+const TEST_ORG = "test-org";
 beforeAll(() => {
   server.listen();
+});
+
+beforeEach(() => {
+  const env: CiEnv = {
+    APP_ID: TEST_APP_ID,
+    APP_PRIVATE_KEY: TEST_PRIVATE_KEY,
+    TARGET_ORGS: [TEST_ORG],
+    INACTIVITY_DAYS: "90",
+    LOG_LEVEL: "info",
+  };
+  process.env = {
+    ...process.env,
+    ...env,
+  } as NodeJS.ProcessEnv;
 });
 
 afterEach(() => {
@@ -60,26 +75,25 @@ describe("CLI configuration and parsing", () => {
     });
   });
 
-  it("Should validate environment variables are required", () => {
+  it("Should validate environment variables are required", async () => {
     delete process.env.APP_ID;
-    expect(() => requireEnv("APP_ID")).toThrow("Missing required environment variable: APP_ID");
+    delete process.env.APP_PRIVATE_KEY;
+    await expect(async () => {
+      loadConfigEnv();
+    }).rejects.toThrow("Invalid environment: /APP_ID: Expected string; /APP_PRIVATE_KEY: Expected string");
   });
 
-  it("Should validate APP_ID is not empty", () => {
-    process.env.APP_ID = "   ";
-    expect(() => requireEnv("APP_ID")).toThrow("Missing required environment variable: APP_ID");
-  });
-
-  it("Should parse INACTIVITY_DAYS as integer", () => {
+  it("Should parse INACTIVITY_DAYS as integer", async () => {
     process.env.INACTIVITY_DAYS = "45";
-    const parsed = Number.parseInt(process.env.INACTIVITY_DAYS, 10);
-    expect(parsed).toBe(45);
+    const config = loadConfigEnv();
+    expect(config.INACTIVITY_DAYS).toBe(45);
   });
 
   it("Should handle non-numeric INACTIVITY_DAYS", () => {
     process.env.INACTIVITY_DAYS = "not-a-number";
-    const parsed = Number.parseInt(process.env.INACTIVITY_DAYS, 10);
-    expect(Number.isNaN(parsed)).toBe(true);
+    expect(() => {
+      loadConfigEnv();
+    }).toThrow("Invalid environment: /INACTIVITY_DAYS: Expected union value");
   });
 
   describe("Error output formatting", () => {

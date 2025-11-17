@@ -60,7 +60,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return safe when repository is not a fork", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "info").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -84,7 +84,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return unsafe when fork has open PR to upstream", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "info").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -120,7 +120,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return safe when fork has no open PRs to upstream", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "info").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -144,7 +144,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return unsafe when fork is detected but parent is unknown", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "info").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -185,7 +185,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should identify fork with closed PRs as safe", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "info").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,

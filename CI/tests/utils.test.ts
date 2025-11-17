@@ -1,10 +1,22 @@
 import { describe, expect, it } from "@jest/globals";
 import { firstValidTimestamp, normalizePrivateKey } from "../src/utils";
+import { CiEnv } from "../src/env";
 
 const DATE_STRING_1 = "2024-01-15T10:30:00Z";
 const DATE_STRING_2 = "2024-01-15T10:30:00.000Z";
 
 describe("Utility functions", () => {
+  beforeAll(() => {
+    const env: CiEnv = {
+      APP_ID: "12345",
+      APP_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBeAKCAQEAtFJ5Uj1ovTLPM7Jpy\n-----END RSA PRIVATE KEY-----",
+      TARGET_ORGS: ["example-org"],
+      INACTIVITY_DAYS: "90",
+      LOG_LEVEL: "info",
+    };
+    process.env = { ...process.env, ...env } as NodeJS.ProcessEnv;
+  });
+
   describe("normalizePrivateKey", () => {
     it("Should handle PEM-formatted key with actual newlines", () => {
       const pemKey = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAtFJ5Uj1ovTLPM7Jpy\n-----END RSA PRIVATE KEY-----";

@@ -4,6 +4,7 @@ import { runAutoMerge } from "../src/main";
 import { db, resetState, setMergeStatus, setShouldFailInstallation, setShouldFailMerge, setShouldFailRepoList } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import { Octokit } from "@octokit/rest";
+import { CiEnv } from "../src/env";
 
 const ACTIVE_REPO = "active-repo";
 const INACTIVE_REPO = "inactive-repo";
@@ -33,6 +34,20 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 beforeAll(() => {
   server.listen();
+});
+
+beforeEach(() => {
+  const env: CiEnv = {
+    APP_ID: TEST_APP_ID,
+    APP_PRIVATE_KEY: TEST_PRIVATE_KEY,
+    TARGET_ORGS: [TEST_ORG],
+    INACTIVITY_DAYS: "90",
+    LOG_LEVEL: "info",
+  };
+  process.env = {
+    ...process.env,
+    ...env,
+  } as NodeJS.ProcessEnv;
 });
 
 afterEach(() => {

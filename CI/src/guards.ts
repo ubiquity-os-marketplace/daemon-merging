@@ -13,13 +13,13 @@ export async function forkSafetyGuard({ octokit, repoSlug }: { octokit: Octokit;
     });
 
     if (!repo.fork) {
-      logger.info(`[Fork Guard] ${repoSlug.owner}/${repoSlug.repo} is not a fork`);
+      logger.debug(`[Fork Guard] ${repoSlug.owner}/${repoSlug.repo} is not a fork`);
       return { safe: true };
     }
 
     const parent = repo.parent?.full_name;
     if (!parent) {
-      logger.info(`[Fork Guard] Fork detected but parent unknown`);
+      logger.debug(`[Fork Guard] Fork detected but parent unknown`);
       return { safe: false, reason: "fork detected with unknown parent" };
     }
 
@@ -29,17 +29,18 @@ export async function forkSafetyGuard({ octokit, repoSlug }: { octokit: Octokit;
       repo: upRepo,
       state: "open",
       head: `${repoSlug.owner}:main`,
+      per_page: 100, // 1 is enough, but set higher limit just in case
     });
 
     if (pulls.length > 0) {
-      logger.info(`[Fork Guard] Found open PR from ${repoSlug.owner}:main to ${parent}`);
+      logger.debug(`[Fork Guard] Found open PR from ${repoSlug.owner}:main to ${parent}`);
       return {
         safe: false,
         reason: `open PR from ${repoSlug.owner}:main to ${parent}`,
       };
     }
 
-    logger.info(`[Fork Guard] No open PRs found, safe to proceed`);
+    logger.debug(`[Fork Guard] No open PRs found, safe to proceed`);
     return { safe: true };
   } catch (error) {
     logger.error(`[Fork Guard] Check failed:`, { e: error });
