@@ -5,6 +5,11 @@ on:
 
 env:
   NODE_ENV: "test"
+  APP_ID: ${{ secrets.APP_ID }}
+  APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+  TARGET_ORGS: '["test-org"]'
+  INACTIVITY_DAYS: '90'
+  LOG_LEVEL: 'info'
 
 jobs:
   testing:
