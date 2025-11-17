@@ -1,24 +1,7 @@
-import { Octokit as Core } from "@octokit/core";
 import { createAppAuth } from "@octokit/auth-app";
-import { paginateRest } from "@octokit/plugin-paginate-rest";
-import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
-import { retry } from "@octokit/plugin-retry";
-import { throttling } from "@octokit/plugin-throttling";
 import { logger, normalizePrivateKey } from "./utils";
 import { BranchData, Octokit, RepositoryInfo } from "./types";
-
-export const customOctokit = Core.plugin(retry, throttling, restEndpointMethods, paginateRest).defaults({
-  throttle: {
-    onRateLimit: (retryAfter: number, options: { method?: string; url?: string }) => {
-      logger.warn(`[GitHub] Rate limit hit for ${options.method ?? "GET"} ${options.url}. Retrying in ${retryAfter}s`);
-      return true;
-    },
-    onSecondaryRateLimit: (retryAfter: number, options: { method?: string; url?: string }) => {
-      logger.warn(`[GitHub] Secondary rate limit for ${options.method ?? "GET"} ${options.url}. Retrying in ${retryAfter}s`);
-      return true;
-    },
-  },
-});
+import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 
 /**
  * Creates an authenticated GitHub App client

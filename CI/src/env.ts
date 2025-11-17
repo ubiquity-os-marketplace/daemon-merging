@@ -1,58 +1,54 @@
 import { Type, Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
-import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
+import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
+
+const INACTIVITY_DAYS_SCHEMA = Type.Union([Type.String({ pattern: "^[0-9]+$" }), Type.Number()], {
+  default: 90,
+  description: "Number of days of inactivity after which we'll merge development into main",
+  examples: ["7", 10],
+});
 
 // Schema describing required and optional environment variables.
 const ciEnvSchema = Type.Object({
   APP_ID: Type.String({ minLength: 1 }),
   APP_PRIVATE_KEY: Type.String({ minLength: 1 }),
-  TARGET_ORGS: Type.Transform(Type.Union([Type.String({ minLength: 1 }), Type.Array(Type.String({ minLength: 1 }), { minItems: 1 })]))
-    .Decode((input) => {
-      if (Array.isArray(input) && input.length > 0 && input.every((e) => typeof e === "string" && e.trim().length > 0)) {
-        return input;
-      } else if (typeof input === "string" && input.trim().length > 0) {
-        return [input];
-      } else {
-        throw new Error("TARGET_ORGS must be a non-empty array or array string of non-empty strings");
-      }
-    })
-    .Encode((input) => {
-      return input;
-    }),
-  INACTIVITY_DAYS: Type.Optional(
-    Type.Transform(Type.Union([Type.String({ pattern: "^[0-9]+$" }), Type.Number()]))
-      .Decode((input) => {
-        if (typeof input === "number" && Number.isInteger(input) && input >= 0) {
-          return input;
-        } else if (typeof input === "string" && /^[0-9]+$/.test(input)) {
-          return Number.parseInt(input, 10);
-        } else {
-          throw new Error("INACTIVITY_DAYS must be a non-negative integer or string representing a non-negative integer");
-        }
-      })
-      .Encode((input) => {
-        return input;
-      })
-  ),
-  LOG_LEVEL: Type.Optional(Type.Enum(LOG_LEVEL, { default: LOG_LEVEL.INFO })),
+  TARGET_ORGS: Type.Array(Type.String({ minLength: 1 }), { minItems: 1 }),
+  LOG_LEVEL: Type.Enum(LOG_LEVEL, { default: LOG_LEVEL.INFO }),
+  INACTIVITY_DAYS: Type.Transform(INACTIVITY_DAYS_SCHEMA)
+    .Decode((value) => (typeof value === "string" ? parseInt(value, 10) : value))
+    .Encode((value) => value),
 });
 
 export type CiEnv = Static<typeof ciEnvSchema>;
+
+type Env = Omit<NodeJS.ProcessEnv, "GITHUB_TOKEN"> & { TARGET_ORGS?: string };
 
 /**
  * Load and validate environment variables using a TypeBox schema.
  * Provides typed, constrained values for the rest of the application.
  */
-export function loadConfigEnv(env: NodeJS.ProcessEnv = process.env) {
+export function loadConfigEnv(env: Env = process.env) {
+  let orgs: string[] = [];
+  if (env.TARGET_ORGS && typeof env.TARGET_ORGS === "string") {
+    try {
+      orgs = JSON.parse(env.TARGET_ORGS);
+      if (!Array.isArray(orgs) || !orgs.every((o) => typeof o === "string")) {
+        throw new Error("TARGET_ORGS must be a JSON array of strings");
+      }
+    } catch {
+      throw new Error("TARGET_ORGS must be a valid JSON array of strings");
+    }
+  }
+
   const raw: Partial<CiEnv> = {
     APP_ID: env.APP_ID,
     APP_PRIVATE_KEY: env.APP_PRIVATE_KEY,
-    TARGET_ORGS: env.TARGET_ORGS,
+    TARGET_ORGS: orgs.length > 0 ? orgs : (env.TARGET_ORGS as unknown as string[]),
     INACTIVITY_DAYS: env.INACTIVITY_DAYS,
-    LOG_LEVEL: env.LOG_LEVEL,
+    LOG_LEVEL: env.LOG_LEVEL as LogLevel | undefined,
   };
 
-  const cleaned = Value.Clean(ciEnvSchema, raw);
+  const cleaned = Value.Clean(ciEnvSchema, Value.Default(ciEnvSchema, raw));
 
   if (!Value.Check(ciEnvSchema, cleaned)) {
     const errors = [...Value.Errors(ciEnvSchema, raw)].map((e) => `${e.path}: ${e.message}`).join("; ");

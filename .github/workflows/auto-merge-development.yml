@@ -5,10 +5,6 @@ on:
     - cron: "0 6 * * 1" # Mondays at 06:00 UTC
   workflow_dispatch:
 
-env:
-  TARGET_ORGS: '["ubiquity", "ubiquity-os", "ubiquity-os-marketplace", "ubiquity-research", "devpool-directory"]'
-  INACTIVITY_DAYS: "90"
-
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
@@ -30,6 +26,6 @@ jobs:
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
-          TARGET_ORGS: ${{ env.TARGET_ORGS }}
-          INACTIVITY_DAYS: ${{ env.INACTIVITY_DAYS }}
+          TARGET_ORGS: ${{ vars.TARGET_ORGS || '["ubiquity", "ubiquity-os", "ubiquity-os-marketplace", "ubiquity-research", "devpool-directory"]' }}
+          INACTIVITY_DAYS: ${{ vars.INACTIVITY_DAYS || '90' }}
         run: bun run CI/src/cli.ts

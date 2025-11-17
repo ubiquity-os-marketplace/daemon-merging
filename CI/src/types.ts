@@ -25,7 +25,7 @@ export type MergeOutcome =
 export type AutoMergeResult = {
   outcomes: MergeOutcome[];
   errors: number;
-  errorsDetail: MergeError[]; 
+  errorsDetail: MergeError[];
 };
 
 export type ForkGuardResult = { safe: true } | { safe: false; reason: string };
