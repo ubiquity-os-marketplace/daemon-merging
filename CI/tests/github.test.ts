@@ -4,10 +4,8 @@ import { authenticateOrganization, createAppClient, getDefaultBranch, listOrgRep
 import { db, resetState, setMergeStatus } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import { Octokit } from "@octokit/rest";
+import { mockCiEnv, TEST_ORG } from "./__mocks__/ci-env-mock";
 
-const TEST_APP_ID = "123456";
-const TEST_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----MIIEpAIBAAKCAQE-----END RSA PRIVATE KEY-----`;
-const TEST_ORG = "test-org";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 jest.mock("../src/github", () => {
@@ -42,19 +40,19 @@ describe("GitHub API wrappers", () => {
 
   describe("createAppClient", () => {
     it("Should create an authenticated GitHub App client", () => {
-      const client = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
+      const client = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       expect(client).toBeDefined();
       expect(client.rest).toBeDefined();
     });
 
     it("Should handle base64-encoded private key", () => {
-      const client = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
+      const client = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       expect(client).toBeDefined();
     });
 
     it("Should handle PEM-formatted private key", () => {
       const pemKey = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAtFJ5Uj1ovTLPM7Jpy\n-----END RSA PRIVATE KEY-----";
-      const client = createAppClient(TEST_APP_ID, pemKey);
+      const client = createAppClient(mockCiEnv.APP_ID, pemKey);
       expect(client).toBeDefined();
     });
   });
@@ -64,21 +62,21 @@ describe("GitHub API wrappers", () => {
       db.installations.create({
         id: 1,
         org: TEST_ORG,
-        app_id: Number.parseInt(TEST_APP_ID, 10),
+        app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
       });
     });
 
     it("Should create an installation-specific client", async () => {
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
 
       expect(octokit).toBeDefined();
       expect(octokit.rest).toBeDefined();
     });
 
     it("Should throw error for non-existent organization", async () => {
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, "non-existent-org", TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, "non-existent-org", mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
 
       expect(octokit).toBeDefined();
     });
@@ -89,7 +87,7 @@ describe("GitHub API wrappers", () => {
       db.installations.create({
         id: 1,
         org: TEST_ORG,
-        app_id: Number.parseInt(TEST_APP_ID, 10),
+        app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
       });
 
       // Create multiple repos
@@ -109,8 +107,8 @@ describe("GitHub API wrappers", () => {
     });
 
     it("Should list all repositories in an organization", async () => {
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const repos = await listOrgRepos(octokit, TEST_ORG);
 
       if (!repos) {
@@ -123,8 +121,8 @@ describe("GitHub API wrappers", () => {
     });
 
     it("Should include archived repositories in the list", async () => {
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const repos = await listOrgRepos(octokit, TEST_ORG);
 
       if (!repos) {
@@ -140,11 +138,11 @@ describe("GitHub API wrappers", () => {
       db.installations.create({
         id: 1,
         org: "empty-org",
-        app_id: Number.parseInt(TEST_APP_ID, 10),
+        app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
       });
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, "empty-org", TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, "empty-org", mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const repos = await listOrgRepos(octokit, "empty-org");
 
       expect(repos).toHaveLength(0);
@@ -155,7 +153,7 @@ describe("GitHub API wrappers", () => {
       db.installations.create({
         id: 1,
         org: "large-org",
-        app_id: Number.parseInt(TEST_APP_ID, 10),
+        app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
       });
 
       // Create 150 repos to test pagination
@@ -173,8 +171,8 @@ describe("GitHub API wrappers", () => {
         });
       }
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, "large-org", TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, "large-org", mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const repos = await listOrgRepos(octokit, "large-org");
 
       expect(repos).toHaveLength(150);
@@ -186,7 +184,7 @@ describe("GitHub API wrappers", () => {
       db.installations.create({
         id: 1,
         org: TEST_ORG,
-        app_id: Number.parseInt(TEST_APP_ID, 10),
+        app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
       });
 
       db.repos.create({
@@ -212,8 +210,8 @@ describe("GitHub API wrappers", () => {
         sha: "test-sha-123",
       });
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const branch = await getDefaultBranch({
         octokit,
         owner: TEST_ORG,
@@ -233,8 +231,8 @@ describe("GitHub API wrappers", () => {
     });
 
     it("Should return null when development branch does not exist", async () => {
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const branch = await getDefaultBranch({
         octokit,
         owner: TEST_ORG,
@@ -256,8 +254,8 @@ describe("GitHub API wrappers", () => {
         sha: "commit-sha-456",
       });
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const branch = await getDefaultBranch({
         octokit,
         owner: TEST_ORG,
@@ -278,7 +276,7 @@ describe("GitHub API wrappers", () => {
       db.installations.create({
         id: 1,
         org: TEST_ORG,
-        app_id: Number.parseInt(TEST_APP_ID, 10),
+        app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
       });
 
       db.repos.create({
@@ -297,8 +295,8 @@ describe("GitHub API wrappers", () => {
     it("Should successfully merge and return status 201 with SHA", async () => {
       setMergeStatus(201);
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const result = await mergeDefaultIntoMain({
         octokit,
         owner: TEST_ORG,
@@ -315,8 +313,8 @@ describe("GitHub API wrappers", () => {
     it("Should return status 204 when already up-to-date", async () => {
       setMergeStatus(204);
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const result = await mergeDefaultIntoMain({
         octokit,
         owner: TEST_ORG,
@@ -332,8 +330,8 @@ describe("GitHub API wrappers", () => {
     it("Should return status 409 on merge conflict", async () => {
       setMergeStatus(409);
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       const result = await mergeDefaultIntoMain({
         octokit,
         owner: TEST_ORG,
@@ -349,8 +347,8 @@ describe("GitHub API wrappers", () => {
     it("Should include inactivity days in commit message", async () => {
       setMergeStatus(201);
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       await mergeDefaultIntoMain({
         octokit,
         owner: TEST_ORG,
@@ -370,8 +368,8 @@ describe("GitHub API wrappers", () => {
     it("Should use correct base and head branches", async () => {
       setMergeStatus(201);
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       await mergeDefaultIntoMain({
         octokit,
         owner: TEST_ORG,
@@ -391,8 +389,8 @@ describe("GitHub API wrappers", () => {
     it("Should work with custom inactivity threshold", async () => {
       setMergeStatus(201);
 
-      const appClient = createAppClient(TEST_APP_ID, TEST_PRIVATE_KEY);
-      const octokit = await authenticateOrganization(appClient, TEST_ORG, TEST_APP_ID, TEST_PRIVATE_KEY);
+      const appClient = createAppClient(mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
+      const octokit = await authenticateOrganization(appClient, TEST_ORG, mockCiEnv.APP_ID, mockCiEnv.APP_PRIVATE_KEY);
       await mergeDefaultIntoMain({
         octokit,
         owner: TEST_ORG,

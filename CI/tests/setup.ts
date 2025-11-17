@@ -1,6 +1,8 @@
 import { jest } from "@jest/globals";
 import { Octokit } from "@octokit/rest";
 
+jest.mock("@ubiquity-os/plugin-sdk/octokit");
+
 // globally hoisted mock octokit, do not remove
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const mockOctokit = {

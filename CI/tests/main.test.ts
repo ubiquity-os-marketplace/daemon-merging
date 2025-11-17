@@ -4,7 +4,7 @@ import { runAutoMerge } from "../src/main";
 import { db, resetState, setMergeStatus, setShouldFailInstallation, setShouldFailMerge, setShouldFailRepoList } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import { Octokit } from "@octokit/rest";
-import { CiEnv } from "../src/env";
+import { mockCiEnv, TEST_APP_ID, TEST_ORG, TEST_PRIVATE_KEY } from "./__mocks__/ci-env-mock";
 
 const ACTIVE_REPO = "active-repo";
 const INACTIVE_REPO = "inactive-repo";
@@ -27,9 +27,6 @@ jest.mock("../src/github", () => {
   };
 });
 
-const TEST_APP_ID = "123456";
-const TEST_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----MIIEpA-----END RSA PRIVATE KEY-----`;
-const TEST_ORG = "test-org";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 beforeAll(() => {
@@ -37,17 +34,10 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
-  const env: CiEnv = {
-    APP_ID: TEST_APP_ID,
-    APP_PRIVATE_KEY: TEST_PRIVATE_KEY,
-    TARGET_ORGS: [TEST_ORG],
-    INACTIVITY_DAYS: "90",
-    LOG_LEVEL: "info",
-  };
   process.env = {
     ...process.env,
-    ...env,
-  } as NodeJS.ProcessEnv;
+    ...mockCiEnv,
+  } as unknown as NodeJS.ProcessEnv;
 });
 
 afterEach(() => {

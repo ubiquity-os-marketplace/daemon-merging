@@ -2,27 +2,18 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest 
 import { drop } from "@mswjs/data";
 import { db, resetState } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
-import { CiEnv, loadConfigEnv } from "../src/env";
+import { loadConfigEnv } from "../src/env";
+import { mockCiEnv } from "./__mocks__/ci-env-mock";
 
-const TEST_APP_ID = "123456";
-const TEST_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----MIIEpA-----END RSA PRIVATE KEY-----`;
-const TEST_ORG = "test-org";
 beforeAll(() => {
   server.listen();
 });
 
 beforeEach(() => {
-  const env: CiEnv = {
-    APP_ID: TEST_APP_ID,
-    APP_PRIVATE_KEY: TEST_PRIVATE_KEY,
-    TARGET_ORGS: [TEST_ORG],
-    INACTIVITY_DAYS: "90",
-    LOG_LEVEL: "info",
-  };
   process.env = {
     ...process.env,
-    ...env,
-  } as NodeJS.ProcessEnv;
+    ...mockCiEnv,
+  } as unknown as NodeJS.ProcessEnv;
 });
 
 afterEach(() => {
@@ -30,11 +21,6 @@ afterEach(() => {
   resetState();
   server.resetHandlers();
   jest.clearAllMocks();
-  // Clean up environment
-  delete process.env.APP_ID;
-  delete process.env.APP_PRIVATE_KEY;
-  delete process.env.TARGET_ORGS;
-  delete process.env.INACTIVITY_DAYS;
 });
 
 afterAll(() => {
@@ -50,7 +36,7 @@ describe("CLI configuration and parsing", () => {
     db.installations.create({
       id: 1,
       org: "test-org",
-      app_id: Number.parseInt(TEST_APP_ID, 10),
+      app_id: Number.parseInt(mockCiEnv.APP_ID, 10),
     });
 
     db.repos.create({
@@ -85,6 +71,7 @@ describe("CLI configuration and parsing", () => {
 
   it("Should parse INACTIVITY_DAYS as integer", async () => {
     process.env.INACTIVITY_DAYS = "45";
+    process.env.TARGET_ORGS = ["org1", "org2"] as unknown as string;
     const config = loadConfigEnv();
     expect(config.INACTIVITY_DAYS).toBe(45);
   });
