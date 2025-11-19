@@ -1,4 +1,5 @@
 import { RestEndpointMethodTypes } from "@octokit/rest";
+import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 
 export type AutoMergeOptions = {
   appId: string;
@@ -32,4 +33,4 @@ export type ForkGuardResult = { safe: true } | { safe: false; reason: string };
 
 export type RepositoryInfo = RestEndpointMethodTypes["repos"]["listForOrg"]["response"]["data"][number];
 export type BranchData = RestEndpointMethodTypes["repos"]["getBranch"]["response"]["data"];
-export type Octokit = InstanceType<typeof import("./github").customOctokit>;
+export type Octokit = InstanceType<typeof customOctokit>;
