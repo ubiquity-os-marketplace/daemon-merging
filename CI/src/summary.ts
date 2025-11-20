@@ -18,7 +18,7 @@ export function writeGithubSummary(outcomes: MergeOutcome[], errorCount: number,
 
   core.summary
     .addHeading("Auto-Merge Summary")
-    .addRaw(`Processed **${outcomes.length}** repositories with **${errorCount}** errors.`)
+    .addRaw(`Processed <b>${outcomes.length}</b> repositories with <b>${errorCount}</b> errors.`)
     .addBreak()
     .addTable([
       ["Status", "Count"],
@@ -40,7 +40,7 @@ export function writeGithubSummary(outcomes: MergeOutcome[], errorCount: number,
       .addHeading("Failures", 2)
       .addTable([
         ["Scope", "Org", "Repo", "Stage", "Reason", "URL"],
-        ...errorsDetail.map((e) => [e.scope, e.org, e.repo ?? "—", e.stage, e.reason, `[link](${e.url})`]),
+        ...errorsDetail.map((e) => [e.scope, e.org, e.repo ?? "—", e.stage, e.reason, `<a href="${e.url}">link</a>`]),
       ]);
 
     // Emit GitHub Annotations for quick visibility
@@ -68,7 +68,7 @@ function statusIcon(status: MergeOutcome["status"]): string {
 function detailsFor(o: MergeOutcome): string {
   switch (o.status) {
     case "merged":
-      return `SHA ${o.sha}`;
+      return `SHA: <code>${o.sha.substring(0, 7)}</code> - <a href="https://github.com/${o.org}/${o.repo}/commit/${o.sha}">view commit</a>`;
     case UP_TO_DATE:
       return "Already contained";
     case "conflict":

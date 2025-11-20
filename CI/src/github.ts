@@ -101,7 +101,7 @@ export async function mergeDefaultIntoMain({
       // Base is main; head is the provided defaultBranch we want to merge from
       base: "main",
       head: defaultBranch,
-      commit_message: `Automated merge from ${defaultBranch} to main after ${inactivityDays} days of inactivity`,
+      commit_message: `chore(ci): automated merge from ${defaultBranch} to main after ${inactivityDays} days of inactivity`,
     });
     const status = res.status as 201 | 204;
     const sha = (res.data as { sha?: string } | undefined)?.sha;
