@@ -363,16 +363,7 @@ async function attemptMerge({
     if (error instanceof Error && error.message.includes("Base does not exist")) {
       // Main branch does not exist, likely inside a fork/QA-organization - create it and retry
       await createMainBranch({ octokit, org, repoName, defaultBranch });
-      logger.debug(`[Auto-Merge] Created main branch for ${fullRepoName}, retrying merge...`);
-      return await attemptMerge({
-        octokit,
-        org,
-        repoName,
-        fullRepoName,
-        daysSinceLastCommit,
-        inactivityDays,
-        defaultBranch,
-      });
+      logger.debug(`[Auto-Merge] Created main branch for ${fullRepoName}`);
     }
     logger.error(`[Auto-Merge] Merge failed for ${fullRepoName}:`, { e: error });
     return {
