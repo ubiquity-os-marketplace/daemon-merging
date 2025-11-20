@@ -113,7 +113,7 @@ export async function mergeDefaultIntoMain({
   }
 }
 
-export async function getMainBranch({ octokit, org, repoName }: { octokit: Octokit; org: string; repoName: string }) {
+export async function getMainBranch({ octokit, org, repoName, defaultBranch }: { octokit: Octokit; org: string; repoName: string; defaultBranch: string }) {
   try {
     return await octokit.rest.repos.getBranch({
       owner: org,
@@ -121,13 +121,11 @@ export async function getMainBranch({ octokit, org, repoName }: { octokit: Octok
       branch: "main",
     });
   } catch {
-    // Branch does not exist
+    return await createMainBranchFromDefaultBranch({ octokit, org, repoName, defaultBranch });
   }
-
-  return null;
 }
 
-export async function createMainBranch({
+export async function createMainBranchFromDefaultBranch({
   octokit,
   org,
   repoName,
@@ -137,28 +135,36 @@ export async function createMainBranch({
   org: string;
   repoName: string;
   defaultBranch: string;
-}): Promise<void> {
+}) {
   try {
-    if (!(await getMainBranch({ octokit, org, repoName }))) {
-      const devBranch = await octokit.rest.repos.getBranch({
-        owner: org,
-        repo: repoName,
-        branch: defaultBranch,
-      });
+    const devBranch = await octokit.rest.repos.getBranch({
+      owner: org,
+      repo: repoName,
+      branch: defaultBranch,
+    });
 
-      await octokit.rest.git.createRef({
-        owner: org,
-        repo: repoName,
-        ref: "refs/heads/main",
-        sha: devBranch.data.commit.sha,
-      });
+    await octokit.rest.git.createRef({
+      owner: org,
+      repo: repoName,
+      ref: "refs/heads/main",
+      sha: devBranch.data.commit.sha,
+    });
 
-      logger.info(`[Auto-Merge] Created main branch for ${org}/${repoName} from ${defaultBranch}`);
-    } else {
-      logger.info(`[Auto-Merge] main branch already exists for ${org}/${repoName}`);
-    }
+    logger.info(`[Auto-Merge] Created main branch for ${org}/${repoName} from ${defaultBranch}`);
   } catch (error) {
     logger.error(`[Auto-Merge] Failed to create main branch for ${org}/${repoName}:`, { e: error });
+    throw error;
+  }
+
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    return await octokit.rest.repos.getBranch({
+      owner: org,
+      repo: repoName,
+      branch: "main",
+    });
+  } catch (error) {
+    logger.error(`[Auto-Merge] Failed to get main branch for ${org}/${repoName} after creation:`, { e: error });
     throw error;
   }
 }

@@ -1,4 +1,4 @@
-import { authenticateOrganization, createAppClient, createMainBranch, getDefaultBranch, listOrgRepos, mergeDefaultIntoMain, openPullRequest } from "./github";
+import { authenticateOrganization, createAppClient, getDefaultBranch, getMainBranch, listOrgRepos, mergeDefaultIntoMain, openPullRequest } from "./github";
 import { forkSafetyGuard } from "./guards";
 import { firstValidTimestamp, logger } from "./utils";
 import { AutoMergeOptions, AutoMergeResult, BranchData, MergeOutcome, MergeError, Octokit, RepositoryInfo } from "./types";
@@ -131,7 +131,7 @@ async function processRepository(
 ): Promise<{ outcome?: MergeOutcome; error?: boolean; errorDetail?: MergeError; aborted?: boolean }> {
   const { octokit, org, cutoffTime, inactivityDays } = context;
   const repoName = `${org}/${repo.name}`;
-  const defaultBranch = repo.default_branch ?? "development"; // standard in the ubiquity ecosystem
+  const defaultBranchName = repo.default_branch ?? "development"; // standard in the ubiquity ecosystem
 
   logger.info(`[Auto-Merge] Checking ${repoName}`);
 
@@ -146,7 +146,7 @@ async function processRepository(
     status: UP_TO_DATE,
     org,
     repo: repo.name,
-    defaultBranch,
+    defaultBranch: defaultBranchName,
   };
 
   // Skip archived repositories
@@ -162,27 +162,39 @@ async function processRepository(
   }
 
   // Get and validate default branch
-  const branch = await getDefaultBranch({
+  const defaultBranchData = await getDefaultBranch({
     octokit,
     owner: org,
     repo: repo.name,
-    defaultBranch,
+    defaultBranch: defaultBranchName,
   });
 
-  if (!branch) {
+  if (!defaultBranchData) {
     return {
       outcome: {
         ...outcome,
         status: "skipped",
-        reason: `${defaultBranch} branch missing`,
+        reason: `${defaultBranchName} branch missing`,
       },
     };
   }
 
-  // Check if branch is inactive
+  const mainBranch = await getMainBranch({ octokit, org, repoName: repo.name, defaultBranch: defaultBranchName });
+
+  if (!mainBranch) {
+    return {
+      outcome: {
+        ...outcome,
+        status: "skipped",
+        reason: `main branch missing and failed to create`,
+      },
+    };
+  }
+
+  // Check if default branch is inactive
   const inactivityCheck = await checkBranchInactivity({
     octokit: context.octokit,
-    branch,
+    branch: defaultBranchData,
     cutoffTime,
     repoName,
     inactivityDays,
@@ -211,7 +223,7 @@ async function processRepository(
   // Attempt to merge the branch
   return await attemptMerge({
     octokit,
-    defaultBranch,
+    defaultBranch: defaultBranchName,
     fullRepoName: repoName,
     repoName: repo.name,
     org,
@@ -361,11 +373,10 @@ async function attemptMerge({
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("Base does not exist")) {
-      // Main branch does not exist, likely inside a fork/QA-organization - create it and retry
-      await createMainBranch({ octokit, org, repoName, defaultBranch });
-      logger.debug(`[Auto-Merge] Created main branch for ${fullRepoName}`);
+      logger.warn(`[Auto-Merge] ✗ Merge failed for ${fullRepoName}: main branch does not exist`);
+    } else {
+      logger.error(`[Auto-Merge] Merge failed for ${fullRepoName}:`, { e: error });
     }
-    logger.error(`[Auto-Merge] Merge failed for ${fullRepoName}:`, { e: error });
     return {
       error: true,
       errorDetail: {
