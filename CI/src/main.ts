@@ -181,12 +181,23 @@ async function processRepository(
 
   const mainBranch = await getMainBranch({ octokit, org, repoName: repo.name, defaultBranch: defaultBranchName });
 
-  if (!mainBranch) {
+  if (!mainBranch.data) {
     return {
       outcome: {
         ...outcome,
         status: "skipped",
         reason: `main branch missing and failed to create`,
+      },
+    };
+  }
+
+  if (mainBranch.data.name === defaultBranchName) {
+    logger.info(`[Auto-Merge] Skipping ${repoName}: main branch is the same as default branch (${defaultBranchName})`);
+    return {
+      outcome: {
+        ...outcome,
+        status: "skipped",
+        reason: `main branch is the same as default branch (${defaultBranchName})`,
       },
     };
   }

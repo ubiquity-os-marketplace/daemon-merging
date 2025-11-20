@@ -2,6 +2,33 @@ import { http, HttpResponse } from "msw";
 import { db, state } from "./db";
 
 export const handlers = [
+  // POST https://api.github.com/repos/test-org/inactive-repo/git/refs
+  http.post("https://api.github.com/repos/:owner/:repo/git/refs", async ({ params: { owner, repo }, request }) => {
+    const values = await request.body
+      ?.getReader()
+      .read()
+      .then(({ value }) => JSON.parse(new TextDecoder().decode(value)));
+
+    db.branches.create({
+      id: db.branches.count() + 1,
+      owner: owner as string,
+      repo: repo as string,
+      name: values.ref.replace("refs/heads/", ""),
+      sha: values.sha as string,
+      commitDate: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({
+      ref: values.ref,
+      url: `https://api.github.com/repos/${owner}/${repo}/git/refs/${values.ref.replace("refs/heads/", "")}`,
+      sha: values.sha,
+      object: {
+        sha: values.sha,
+        type: "commit",
+        url: `https://api.github.com/repos/${owner}/${repo}/git/commits/${values.sha}`,
+      },
+    });
+  }),
   // POST https://api.github.com/repos/test-org/inactive-repo/pulls
   http.post("https://api.github.com/repos/:owner/:repo/pulls", ({ params: { owner, repo } }) => {
     const prId = db.pulls.count() + 1;
