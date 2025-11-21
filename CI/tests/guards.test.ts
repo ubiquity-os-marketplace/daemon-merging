@@ -4,7 +4,7 @@ import { forkSafetyGuard } from "../src/guards";
 import { db, resetState } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
 import type { Octokit } from "../src/types";
-import { logger } from "../src/utils";
+import { ciLogger } from "../src/utils";
 import { LogReturn } from "@ubiquity-os/ubiquity-os-logger";
 
 const FORK_OWNER = "fork-owner";
@@ -60,7 +60,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return safe when repository is not a fork", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(ciLogger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -75,7 +75,7 @@ describe("forkSafetyGuard", () => {
     });
 
     const octokit = createMockOctokit();
-    const result = await forkSafetyGuard({ octokit, repoSlug: { owner: "test-owner", repo: "test-repo" } });
+    const result = await forkSafetyGuard({ octokit, repoData: { owner: "test-owner", repo: "test-repo" } });
 
     expect(result.safe).toBe(true);
     expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringContaining("is not a fork"));
@@ -84,7 +84,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return unsafe when fork has open PR to upstream", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(ciLogger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -108,7 +108,7 @@ describe("forkSafetyGuard", () => {
     });
 
     const octokit = createMockOctokit();
-    const result = await forkSafetyGuard({ octokit, repoSlug: { owner: FORK_OWNER, repo: THIS_REPO } });
+    const result = await forkSafetyGuard({ octokit, repoData: { owner: FORK_OWNER, repo: THIS_REPO } });
 
     expect(result.safe).toBe(false);
     if (!result.safe) {
@@ -120,7 +120,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return safe when fork has no open PRs to upstream", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(ciLogger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -135,7 +135,7 @@ describe("forkSafetyGuard", () => {
     });
 
     const octokit = createMockOctokit();
-    const result = await forkSafetyGuard({ octokit, repoSlug: { owner: FORK_OWNER, repo: THIS_REPO } });
+    const result = await forkSafetyGuard({ octokit, repoData: { owner: FORK_OWNER, repo: THIS_REPO } });
 
     expect(result.safe).toBe(true);
     expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringContaining("No open PRs found"));
@@ -144,7 +144,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return unsafe when fork is detected but parent is unknown", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(ciLogger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -159,7 +159,7 @@ describe("forkSafetyGuard", () => {
     });
 
     const octokit = createMockOctokit();
-    const result = await forkSafetyGuard({ octokit, repoSlug: { owner: FORK_OWNER, repo: THIS_REPO } });
+    const result = await forkSafetyGuard({ octokit, repoData: { owner: FORK_OWNER, repo: THIS_REPO } });
 
     expect(result.safe).toBe(false);
     if (!result.safe) {
@@ -171,10 +171,10 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should return unsafe on API check failure", async () => {
-    const loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => ({}) as LogReturn);
+    const loggerErrorSpy = jest.spyOn(ciLogger, "error").mockImplementation(() => ({}) as LogReturn);
 
     const octokit = createMockOctokit();
-    const result = await forkSafetyGuard({ octokit, repoSlug: { owner: "any-owner", repo: "any-repo" } });
+    const result = await forkSafetyGuard({ octokit, repoData: { owner: "any-owner", repo: "any-repo" } });
 
     expect(result.safe).toBe(false);
     if (!result.safe) {
@@ -185,7 +185,7 @@ describe("forkSafetyGuard", () => {
   });
 
   it("Should identify fork with closed PRs as safe", async () => {
-    const loggerInfoSpy = jest.spyOn(logger, "debug").mockImplementation(() => ({}) as LogReturn);
+    const loggerInfoSpy = jest.spyOn(ciLogger, "debug").mockImplementation(() => ({}) as LogReturn);
 
     db.repos.create({
       id: 1,
@@ -209,7 +209,7 @@ describe("forkSafetyGuard", () => {
     });
 
     const octokit = createMockOctokit();
-    const result = await forkSafetyGuard({ octokit, repoSlug: { owner: FORK_OWNER, repo: THIS_REPO } });
+    const result = await forkSafetyGuard({ octokit, repoData: { owner: FORK_OWNER, repo: THIS_REPO } });
 
     expect(result.safe).toBe(true);
     expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringContaining("No open PRs found"));

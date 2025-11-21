@@ -1,13 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
-import { firstValidTimestamp, normalizePrivateKey } from "../src/utils";
+import { normalizePrivateKey } from "../src/utils";
 import { mockCiEnv } from "./__mocks__/ci-env-mock";
-
-const DATE_STRING_1 = "2024-01-15T10:30:00Z";
-const DATE_STRING_2 = "2024-01-15T10:30:00.000Z";
 
 describe("Utility functions", () => {
   beforeAll(() => {
-    process.env = { ...process.env, ...mockCiEnv } as unknown as NodeJS.ProcessEnv;
+    process.env = mockCiEnv as unknown as NodeJS.ProcessEnv;
   });
 
   describe("normalizePrivateKey", () => {
@@ -58,82 +55,6 @@ describe("Utility functions", () => {
 
       expect(result.match(/\\n/g)).toBeNull();
       expect(result.match(/\n/g)).toBeTruthy();
-    });
-  });
-
-  describe("firstValidTimestamp", () => {
-    it("Should return first valid ISO date string", () => {
-      const date = DATE_STRING_2;
-      const result = firstValidTimestamp([date]);
-
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.toISOString()).toBe(date);
-    });
-
-    it("Should skip null and undefined values", () => {
-      const date = DATE_STRING_2;
-      const result = firstValidTimestamp([null, undefined, date]);
-
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.toISOString()).toBe(date);
-    });
-
-    it("Should return null when all values are null or undefined", () => {
-      const result = firstValidTimestamp([null, undefined, null]);
-
-      expect(result).toBeNull();
-    });
-
-    it("Should return null when array is empty", () => {
-      const result = firstValidTimestamp([]);
-
-      expect(result).toBeNull();
-    });
-
-    it("Should skip invalid date strings", () => {
-      const validDate = DATE_STRING_1;
-      const result = firstValidTimestamp(["invalid-date", "not-a-date", validDate]);
-
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.toISOString()).toBe(DATE_STRING_2);
-    });
-
-    it("Should return first valid date when multiple valid dates exist", () => {
-      const date1 = DATE_STRING_1;
-      const date2 = "2024-02-20T15:45:00Z";
-      const result = firstValidTimestamp([date1, date2]);
-
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.toISOString()).toBe(DATE_STRING_2);
-    });
-
-    it("Should return null for array of invalid dates", () => {
-      const result = firstValidTimestamp(["invalid", "also-invalid", "nope"]);
-
-      expect(result).toBeNull();
-    });
-
-    it("Should handle various date formats", () => {
-      const isoDate = DATE_STRING_1;
-      const result = firstValidTimestamp([isoDate]);
-
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.getFullYear()).toBe(2024);
-    });
-
-    it("Should skip empty strings", () => {
-      const validDate = DATE_STRING_1;
-      const result = firstValidTimestamp(["  ", validDate]);
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.toISOString()).toBe(DATE_STRING_2);
-    });
-
-    it("Should handle dates with milliseconds", () => {
-      const dateWithMs = "2024-01-15T10:30:00.123Z";
-      const result = firstValidTimestamp([dateWithMs]);
-
-      expect(result).toBeInstanceOf(Date);
-      expect(result?.getMilliseconds()).toBe(123);
     });
   });
 });

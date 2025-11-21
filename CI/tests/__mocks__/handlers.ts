@@ -1,7 +1,95 @@
 import { http, HttpResponse } from "msw";
 import { db, state } from "./db";
 
+function createCommitData({
+  sha,
+  date,
+  author,
+  committer,
+  owner,
+  repo,
+}: {
+  sha: string;
+  date: Date;
+  author: string;
+  committer: string;
+  owner: string;
+  repo: string;
+}) {
+  return {
+    sha,
+    commit: {
+      committer: { name: committer, date },
+      author: { name: author, date },
+    },
+    url: `https://api.github.com/repos/${owner}/${repo}/commits/${sha}`,
+  };
+}
+
 export const handlers = [
+  // GET /repos/:owner/:repo/commits - List commits for a repository
+  http.get("https://api.github.com/repos/:owner/:repo/commits", ({ params: { owner, repo }, request }) => {
+    const ownerName = owner as string;
+    const repoName = repo as string;
+    const url = new URL(request.url);
+    const sha = url.searchParams.get("sha");
+    const since = url.searchParams.get("since");
+
+    // Get branch data to determine commit date
+    const branchData = db.branches.findFirst({
+      where: {
+        owner: { equals: ownerName },
+        repo: { equals: repoName },
+        name: { equals: sha || "development" },
+      },
+    });
+
+    if (!branchData) {
+      return HttpResponse.json([]);
+    }
+
+    // Parse commit date from branch data
+    let commitDate: Date;
+    if (branchData.commitDate && branchData.commitDate.trim()) {
+      commitDate = new Date(branchData.commitDate);
+    } else {
+      // No commit date - return empty array to simulate missing date
+      return HttpResponse.json([]);
+    }
+
+    // If 'since' parameter is provided, only return commits after that date
+    if (since) {
+      const sinceDate = new Date(since);
+      if (commitDate < sinceDate) {
+        // Commit is before the 'since' date, return empty array
+        return HttpResponse.json([]);
+      }
+    }
+
+    // Return commits array (GitHub API returns array directly, not wrapped)
+    return HttpResponse.json([
+      createCommitData({
+        sha: branchData.sha || "commit-sha",
+        date: commitDate,
+        author: "test-user",
+        committer: "test-user",
+        owner: ownerName,
+        repo: repoName,
+      }),
+    ]);
+  }),
+
+  // GET /users/:username - Get user information (for isHumanUser check)
+  http.get("https://api.github.com/users/:username", ({ params: { username } }) => {
+    // By default, treat all users as human (not bots)
+    // Tests can override this behavior if needed
+    return HttpResponse.json({
+      login: username as string,
+      id: 1,
+      type: "User", // Not "Bot"
+      name: username as string,
+    });
+  }),
   // POST https://api.github.com/repos/test-org/inactive-repo/git/refs
   http.post("https://api.github.com/repos/:owner/:repo/git/refs", async ({ params: { owner, repo }, request }) => {
     const values = await request.body
@@ -166,8 +254,14 @@ export const handlers = [
       commit: {
         sha: branchData.sha,
         commit: {
-          committer: { date: branchData.commitDate },
-          author: { date: branchData.commitDate },
+          committer: {
+            date: branchData.commitDate || new Date().toISOString(),
+            name: "test-user",
+          },
+          author: {
+            date: branchData.commitDate || new Date().toISOString(),
+            name: "test-user",
+          },
         },
       },
     });
