@@ -29,7 +29,7 @@ type Env = Omit<NodeJS.ProcessEnv, "GITHUB_TOKEN"> & { TARGET_ORGS?: string };
  */
 export function loadConfigEnv(env: Env = process.env) {
   let orgs: string[] = [];
-  if (env.TARGET_ORGS && typeof env.TARGET_ORGS === "string") {
+  if (env?.TARGET_ORGS && typeof env.TARGET_ORGS === "string") {
     try {
       orgs = JSON.parse(env.TARGET_ORGS);
       if (!Array.isArray(orgs) || !orgs.every((o) => typeof o === "string")) {
@@ -38,12 +38,14 @@ export function loadConfigEnv(env: Env = process.env) {
     } catch {
       throw new Error("TARGET_ORGS must be a valid JSON array of strings");
     }
+  } else {
+    orgs = (env.TARGET_ORGS as string[] | undefined) ?? [];
   }
 
   const raw: Partial<CiEnv> = {
     APP_ID: env.APP_ID,
     APP_PRIVATE_KEY: env.APP_PRIVATE_KEY,
-    TARGET_ORGS: orgs.length > 0 ? orgs : (env.TARGET_ORGS as unknown as string[]),
+    TARGET_ORGS: orgs,
     INACTIVITY_DAYS: env.INACTIVITY_DAYS,
     LOG_LEVEL: env.LOG_LEVEL as LogLevel | undefined,
   };
