@@ -115,10 +115,10 @@ async function getRecentHumanCommits({
   // Get unique usernames to check
   const usernames = new Set<string>();
   for (const commit of potentialHumanCommits) {
-    const author = commit.commit.author?.name;
-    const committer = commit.commit.committer?.name;
-    if (author) usernames.add(author);
-    if (committer) usernames.add(committer);
+    const authorLogin = commit.author?.login;
+    const committerLogin = commit.committer?.login;
+    if (authorLogin) usernames.add(authorLogin);
+    if (committerLogin) usernames.add(committerLogin);
   }
 
   // Batch check user types
@@ -127,10 +127,11 @@ async function getRecentHumanCommits({
   const humanUsernames = new Set(Array.from(usernames).filter((_unused, index) => userChecks[index]));
 
   // Filter commits to only include those by human users
+  // Only include commits where the author or committer has a GitHub login and is human
   const finalCommits = potentialHumanCommits.filter((commit) => {
-    const author = commit.commit.author?.name;
-    const committer = commit.commit.committer?.name;
-    return humanUsernames.has(author || "") || humanUsernames.has(committer || "");
+    const authorLogin = commit.author?.login;
+    const committerLogin = commit.committer?.login;
+    return (authorLogin && humanUsernames.has(authorLogin)) || (committerLogin && humanUsernames.has(committerLogin));
   });
 
   return {
