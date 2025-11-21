@@ -115,7 +115,7 @@ async function processRepository(
   const guardResult = await forkSafetyGuard({ octokit, repoData: { owner: org, repo: repo.name } });
   if (!guardResult.safe) {
     ciLogger.info(`[Auto-Merge] Aborted: ${guardResult.reason}`);
-    return { outcome, aborted: true };
+    return { outcome: { ...outcome, status: "skipped", reason: guardResult.reason }, aborted: true };
   }
 
   // Skip archived repositories

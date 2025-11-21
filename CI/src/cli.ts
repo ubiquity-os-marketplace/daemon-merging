@@ -25,7 +25,12 @@ async function main(): Promise<void> {
   }
 
   await writeGithubSummary(result.outcomes, result.errors, result.errorsDetail);
-  if (result.errors > 0) process.exitCode = 1;
+  if (result.errors > 0 && result.errorsDetail.every((e) => e.reason.includes("A pull request already exists for"))) {
+    // more of a warning than an error
+    process.exitCode = 0;
+  } else {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {
