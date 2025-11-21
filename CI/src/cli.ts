@@ -1,6 +1,6 @@
 import { loadConfigEnv } from "./env";
 import { runAutoMerge } from "./main";
-import { logger } from "./utils";
+import { ciLogger } from "./utils";
 import { writeGithubSummary } from "./summary";
 
 async function main(): Promise<void> {
@@ -10,16 +10,16 @@ async function main(): Promise<void> {
   for (const o of result.outcomes) {
     switch (o.status) {
       case "merged":
-        logger.info(`✅ ${o.org}/${o.repo}: merged ${o.defaultBranch} into main (${o.sha}).`);
+        ciLogger.info(`✅ ${o.org}/${o.repo}: merged ${o.defaultBranch} into main (${o.sha}).`);
         break;
       case "up-to-date":
-        logger.info(`ℹ️  ${o.org}/${o.repo}: main already contains ${o.defaultBranch}.`);
+        ciLogger.info(`ℹ️  ${o.org}/${o.repo}: main already contains ${o.defaultBranch}.`);
         break;
       case "conflict":
-        logger.info(`⚠️  ${o.org}/${o.repo}: merge conflict detected.`);
+        ciLogger.info(`⚠️  ${o.org}/${o.repo}: merge conflict detected.`);
         break;
       case "skipped":
-        logger.info(`⏭️  ${o.org}/${o.repo}: ${o.reason}.`);
+        ciLogger.info(`⏭️  ${o.org}/${o.repo}: ${o.reason}.`);
         break;
     }
   }

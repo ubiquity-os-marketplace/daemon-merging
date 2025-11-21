@@ -1,5 +1,5 @@
 import { createAppAuth } from "@octokit/auth-app";
-import { logger, normalizePrivateKey } from "./utils";
+import { ciLogger, normalizePrivateKey } from "./utils";
 import { BranchData, Octokit, RepositoryInfo } from "./types";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 
@@ -29,7 +29,7 @@ export async function authenticateOrganization(appClient: Octokit, org: string, 
       },
     });
   } catch (error) {
-    logger.error(`[Auto-Merge] Failed to authenticate for org ${org}:`, {
+    ciLogger.error(`[Auto-Merge] Failed to authenticate for org ${org}:`, {
       e: error,
     });
     throw error;
@@ -46,7 +46,7 @@ export async function listOrgRepos(octokit: Octokit, org: string): Promise<Repos
       per_page: 100,
     });
   } catch (error) {
-    logger.error(`[Auto-Merge] Failed to list repos for ${org}:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to list repos for ${org}:`, { e: error });
     return null;
   }
 }
@@ -73,7 +73,7 @@ export async function getDefaultBranch({
     });
     return data as BranchData;
   } catch (error) {
-    logger.error(`[Auto-Merge] Failed to get default branch for ${owner}/${repo}:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to get default branch for ${owner}/${repo}:`, { e: error });
     return null;
   }
 }
@@ -150,9 +150,9 @@ export async function createMainBranchFromDefaultBranch({
       sha: devBranch.data.commit.sha,
     });
 
-    logger.info(`[Auto-Merge] Created main branch for ${org}/${repoName} from ${defaultBranch}`);
+    ciLogger.info(`[Auto-Merge] Created main branch for ${org}/${repoName} from ${defaultBranch}`);
   } catch (error) {
-    logger.error(`[Auto-Merge] Failed to create main branch for ${org}/${repoName}:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to create main branch for ${org}/${repoName}:`, { e: error });
     throw error;
   }
 
@@ -164,7 +164,7 @@ export async function createMainBranchFromDefaultBranch({
       branch: "main",
     });
   } catch (error) {
-    logger.error(`[Auto-Merge] Failed to get main branch for ${org}/${repoName} after creation:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to get main branch for ${org}/${repoName} after creation:`, { e: error });
     throw error;
   }
 }
@@ -188,5 +188,5 @@ export async function openPullRequest({
     base: "main",
     body: `Automated PR to merge ${defaultBranch} into main branch.`,
   });
-  logger.info(`[Auto-Merge] Opened pull request for ${org}/${repoName} to merge ${defaultBranch} into main`);
+  ciLogger.info(`[Auto-Merge] Opened pull request for ${org}/${repoName} to merge ${defaultBranch} into main`);
 }
