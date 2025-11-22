@@ -113,13 +113,7 @@ async function processRepository(
     defaultBranch: defaultBranchName,
   };
 
-  // Safety check: abort if running in a fork with open PR to upstream
-  const guardResult = await forkSafetyGuard({ octokit, repoData: { owner: org, repo: repo.name } });
-  if (!guardResult.safe) {
-    ciLogger.info(`[Auto-Merge] Aborted: ${guardResult.reason}`);
-    return { outcome: { ...outcome, status: "skipped", reason: guardResult.reason }, aborted: true };
-  }
-
+  
   // Skip archived repositories
   if (repo.archived) {
     ciLogger.info(`[Auto-Merge] Skipping ${orgRepoFullName}: archived`);
@@ -141,6 +135,13 @@ async function processRepository(
         reason: "Repository is private",
       },
     };
+  }
+
+  // Safety check: abort if running in a fork with open PR to upstream
+  const guardResult = await forkSafetyGuard({ octokit, repoData: { owner: org, repo: repo.name } });
+  if (!guardResult.safe) {
+    ciLogger.info(`[Auto-Merge] Aborted: ${guardResult.reason}`);
+    return { outcome: { ...outcome, status: "skipped", reason: guardResult.reason }, aborted: true };
   }
 
   // Get and validate default branch
