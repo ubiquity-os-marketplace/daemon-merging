@@ -113,7 +113,6 @@ async function processRepository(
     defaultBranch: defaultBranchName,
   };
 
-  
   // Skip archived repositories
   if (repo.archived) {
     ciLogger.info(`[Auto-Merge] Skipping ${orgRepoFullName}: archived`);
