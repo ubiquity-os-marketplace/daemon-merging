@@ -26,10 +26,6 @@ export async function runAutoMerge(options: AutoMergeOptions): Promise<AutoMerge
     if (result.errorsDetail?.length) {
       errorsDetail.push(...result.errorsDetail);
     }
-
-    if (result.aborted) {
-      break;
-    }
   }
 
   ciLogger.info(`[Auto-Merge] Completed: ${outcomes.length} outcomes, ${errors} errors`);
