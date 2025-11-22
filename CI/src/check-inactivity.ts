@@ -18,18 +18,21 @@ export async function checkBranchInactivity({
   context,
   branch,
   cutoffTime,
-  repoName,
+  owner,
+  repo,
 }: {
   context: ProcessingContext;
   branch: BranchData;
   cutoffTime: number;
-  repoName: string;
+  owner: string;
+  repo: string;
 }) {
+  const repoFullName = `${owner}/${repo}`;
   try {
     const stats = await getRecentHumanCommits({
       octokit: context.octokit,
-      org: context.org,
-      repoName,
+      owner,
+      repo,
       branchName: branch.name,
       inactivityDays: context.inactivityDays,
     });
@@ -45,12 +48,12 @@ export async function checkBranchInactivity({
       }
     } else if (stats.humanCommits === 0 && stats.totalCommits > 0) {
       // Commits found but none are from human users
-      ciLogger.info(`[Auto-Merge] Skipping ${repoName}: no human commits found`);
+      ciLogger.info(`[Auto-Merge] Skipping ${repoFullName}: no human commits found`);
       return { skip: true, reason: "No human commits found", daysSinceLastCommit: 0 };
     }
 
     if (!mostRecentDate || isNaN(mostRecentDate.getTime())) {
-      ciLogger.info(`[Auto-Merge] Skipping ${repoName}: Unable to determine last commit date`);
+      ciLogger.info(`[Auto-Merge] Skipping ${repoFullName}: Unable to determine last commit date`);
       return { skip: true, reason: "Unable to determine last commit date", daysSinceLastCommit: 0 };
     }
 
@@ -58,28 +61,28 @@ export async function checkBranchInactivity({
 
     // If the most recent commit is after the cutoff time, the branch is still active
     if (mostRecentDate.getTime() >= cutoffTime) {
-      ciLogger.info(`[Auto-Merge] Skipping ${repoName}: Development branch is still active (last commit ${daysSinceLastCommit} days ago)`);
+      ciLogger.info(`[Auto-Merge] Skipping ${repoFullName}: Development branch is still active (last commit ${daysSinceLastCommit} days ago)`);
       return { skip: true, reason: "Development branch is still active", daysSinceLastCommit };
     }
 
     // Branch is inactive (most recent commit is before cutoff time)
     return { skip: false, daysSinceLastCommit };
   } catch (error) {
-    ciLogger.error(`[Auto-Merge] Failed to check branch inactivity for ${repoName}:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to check branch inactivity for ${repoFullName}:`, { e: error });
     return { skip: true, reason: "Failed to check branch inactivity", daysSinceLastCommit: 0 };
   }
 }
 
 async function getRecentHumanCommits({
   octokit,
-  org,
-  repoName,
+  owner,
+  repo,
   branchName,
   inactivityDays,
 }: {
   octokit: Octokit;
-  org: string;
-  repoName: string;
+  owner: string;
+  repo: string;
   branchName: string;
   inactivityDays: number;
 }): Promise<{ totalCommits: number; humanCommits: number; mostRecent: string | undefined; oldest: string | undefined }> {
@@ -88,8 +91,8 @@ async function getRecentHumanCommits({
   const cutoffDate = new Date(Date.now() - inactivityDays * MS_PER_DAY * 2);
 
   const allCommits = await octokit.paginate(octokit.rest.repos.listCommits, {
-    owner: org,
-    repo: repoName,
+    owner,
+    repo,
     sha: branchName,
     since: cutoffDate.toISOString(),
     per_page: 100,

@@ -113,80 +113,80 @@ export async function mergeDefaultIntoMain({
   }
 }
 
-export async function getMainBranch({ octokit, org, repoName, defaultBranch }: { octokit: Octokit; org: string; repoName: string; defaultBranch: string }) {
+export async function getMainBranch({ octokit, owner, repo, defaultBranch }: { octokit: Octokit; owner: string; repo: string; defaultBranch: string }) {
   try {
     return await octokit.rest.repos.getBranch({
-      owner: org,
-      repo: repoName,
+      owner,
+      repo,
       branch: "main",
     });
   } catch {
-    return await createMainBranchFromDefaultBranch({ octokit, org, repoName, defaultBranch });
+    return await createMainBranchFromDefaultBranch({ octokit, owner, repo, defaultBranch });
   }
 }
 
 export async function createMainBranchFromDefaultBranch({
   octokit,
-  org,
-  repoName,
+  owner,
+  repo,
   defaultBranch,
 }: {
   octokit: Octokit;
-  org: string;
-  repoName: string;
+  owner: string;
+  repo: string;
   defaultBranch: string;
 }) {
   try {
     const devBranch = await octokit.rest.repos.getBranch({
-      owner: org,
-      repo: repoName,
+      owner,
+      repo,
       branch: defaultBranch,
     });
 
     await octokit.rest.git.createRef({
-      owner: org,
-      repo: repoName,
+      owner,
+      repo,
       ref: "refs/heads/main",
       sha: devBranch.data.commit.sha,
     });
 
-    ciLogger.info(`[Auto-Merge] Created main branch for ${org}/${repoName} from ${defaultBranch}`);
+    ciLogger.info(`[Auto-Merge] Created main branch for ${owner}/${repo} from ${defaultBranch}`);
   } catch (error) {
-    ciLogger.error(`[Auto-Merge] Failed to create main branch for ${org}/${repoName}:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to create main branch for ${owner}/${repo}:`, { e: error });
     throw error;
   }
 
   try {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     return await octokit.rest.repos.getBranch({
-      owner: org,
-      repo: repoName,
+      owner,
+      repo,
       branch: "main",
     });
   } catch (error) {
-    ciLogger.error(`[Auto-Merge] Failed to get main branch for ${org}/${repoName} after creation:`, { e: error });
+    ciLogger.error(`[Auto-Merge] Failed to get main branch for ${owner}/${repo} after creation:`, { e: error });
     throw error;
   }
 }
 
 export async function openPullRequest({
   octokit,
-  org,
-  repoName,
+  owner,
+  repo,
   defaultBranch,
 }: {
   octokit: Octokit;
-  org: string;
-  repoName: string;
+  owner: string;
+  repo: string;
   defaultBranch: string;
 }): Promise<void> {
   await octokit.rest.pulls.create({
-    owner: org,
-    repo: repoName,
+    owner,
+    repo,
     title: `Merge ${defaultBranch} into main`,
     head: defaultBranch,
     base: "main",
     body: `Automated PR to merge ${defaultBranch} into main branch.`,
   });
-  ciLogger.info(`[Auto-Merge] Opened pull request for ${org}/${repoName} to merge ${defaultBranch} into main`);
+  ciLogger.info(`[Auto-Merge] Opened pull request for ${owner}/${repo} to merge ${defaultBranch} into main`);
 }

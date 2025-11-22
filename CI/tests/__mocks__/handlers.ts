@@ -19,9 +19,21 @@ function createCommitData({
   return {
     sha,
     commit: {
-      committer: { name: committer, date },
-      author: { name: author, date },
+      committer: { name: committer, email: `${committer}@example.com`, date: date.toISOString() },
+      author: { name: author, email: `${author}@example.com`, date: date.toISOString() },
+      message: "Test commit",
     },
+    author: {
+      login: author,
+      id: 1,
+      type: "User",
+    },
+    committer: {
+      login: committer,
+      id: 1,
+      type: "User",
+    },
+    parents: [],
     url: `https://api.github.com/repos/${owner}/${repo}/commits/${sha}`,
   };
 }

@@ -7,52 +7,49 @@ import { MergeOutcome, MergeError, Octokit } from "./types";
  */
 export async function attemptMerge({
   octokit,
-  org,
-  repoName,
-  fullRepoName,
+  owner,
+  repo,
   daysSinceLastCommit,
   inactivityDays,
   defaultBranch,
 }: {
   octokit: Octokit;
-  org: string;
-  repoName: string;
-  fullRepoName: string;
+  owner: string;
+  repo: string;
   daysSinceLastCommit: number;
   inactivityDays: number;
   defaultBranch: string;
 }): Promise<{ outcome?: MergeOutcome; error?: boolean; errorDetail?: MergeError }> {
-  ciLogger.info(`[Auto-Merge] Merging ${fullRepoName} (inactive for ${daysSinceLastCommit} days)`);
+  ciLogger.info(`[Auto-Merge] Merging ${owner}/${repo} (inactive for ${daysSinceLastCommit} days)`);
 
   try {
     const result = await mergeDefaultIntoMain({
       octokit,
       defaultBranch,
-      owner: org,
-      repo: repoName,
+      owner,
+      repo,
       inactivityDays,
     });
     return await handleMergeResult({
       octokit,
       result,
-      org,
-      repoName,
-      fullRepoName,
+      owner,
+      repo,
       defaultBranch,
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("Base does not exist")) {
-      ciLogger.warn(`[Auto-Merge] ✗ Merge failed for ${fullRepoName}: main branch does not exist`);
+      ciLogger.warn(`[Auto-Merge] ✗ Merge failed for ${owner}/${repo}: main branch does not exist`);
     } else {
-      ciLogger.error(`[Auto-Merge] Merge failed for ${fullRepoName}:`, { e: error });
+      ciLogger.error(`[Auto-Merge] Merge failed for ${owner}/${repo}:`, { e: error });
     }
     return {
       error: true,
       errorDetail: {
         scope: "repo",
-        org,
-        repo: repoName,
-        url: `https://github.com/${org}/${repoName}`,
+        org: owner,
+        repo,
+        url: `https://github.com/${owner}/${repo}`,
         reason: error instanceof Error ? error.message : String(error),
         stage: "merge",
       },
@@ -66,27 +63,25 @@ export async function attemptMerge({
 async function handleMergeResult({
   octokit,
   result,
-  org,
-  repoName,
-  fullRepoName,
+  owner,
+  repo,
   defaultBranch,
 }: {
   octokit: Octokit;
   result: { status: number; sha?: string };
-  org: string;
-  repoName: string;
-  fullRepoName: string;
+  owner: string;
+  repo: string;
   defaultBranch: string;
 }): Promise<{ outcome: MergeOutcome }> {
   const outcome: MergeOutcome = {
     status: "up-to-date",
-    org,
-    repo: repoName,
+    org: owner,
+    repo,
     defaultBranch,
   };
 
   if (result.status === 201) {
-    ciLogger.info(`[Auto-Merge] ✓ Merged ${fullRepoName} (SHA: ${result.sha})`);
+    ciLogger.info(`[Auto-Merge] ✓ Merged ${owner}/${repo} (SHA: ${result.sha})`);
     return {
       outcome: {
         ...outcome,
@@ -95,11 +90,11 @@ async function handleMergeResult({
       },
     };
   } else if (result.status === 204) {
-    ciLogger.info(`[Auto-Merge] ✓ ${fullRepoName} already up-to-date`);
+    ciLogger.info(`[Auto-Merge] ✓ ${owner}/${repo} already up-to-date`);
     return { outcome };
   } else if (result.status === 409) {
-    ciLogger.warn(`[Auto-Merge] ✗ Merge conflict in ${fullRepoName}`);
-    await openPullRequest({ octokit, org, repoName, defaultBranch });
+    ciLogger.warn(`[Auto-Merge] ✗ Merge conflict in ${owner}/${repo}`);
+    await openPullRequest({ octokit, owner, repo, defaultBranch });
     return { outcome: { ...outcome, status: "conflict" } };
   }
 

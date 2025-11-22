@@ -99,10 +99,10 @@ async function processRepository(
   repo: RepositoryInfo
 ): Promise<{ outcome?: MergeOutcome; error?: boolean; errorDetail?: MergeError; aborted?: boolean }> {
   const { octokit, org, cutoffTime, inactivityDays } = context;
-  const repoName = `${org}/${repo.name}`;
+  const orgRepoFullName = `${org}/${repo.name}`;
   const defaultBranchName = repo.default_branch ?? "development"; // standard in the ubiquity ecosystem
 
-  ciLogger.info(`[Auto-Merge] Checking ${repoName}`);
+  ciLogger.info(`[Auto-Merge] Checking ${orgRepoFullName}`);
 
   const outcome: MergeOutcome = {
     status: "up-to-date",
@@ -120,7 +120,7 @@ async function processRepository(
 
   // Skip archived repositories
   if (repo.archived) {
-    ciLogger.info(`[Auto-Merge] Skipping ${repoName}: archived`);
+    ciLogger.info(`[Auto-Merge] Skipping ${orgRepoFullName}: archived`);
     return {
       outcome: {
         ...outcome,
@@ -148,7 +148,7 @@ async function processRepository(
     };
   }
 
-  const mainBranch = await getMainBranch({ octokit, org, repoName: repo.name, defaultBranch: defaultBranchName });
+  const mainBranch = await getMainBranch({ octokit, owner: org, repo: repo.name, defaultBranch: defaultBranchName });
 
   if (!mainBranch.data) {
     return {
@@ -161,7 +161,7 @@ async function processRepository(
   }
 
   if (mainBranch.data.name === defaultBranchName) {
-    ciLogger.info(`[Auto-Merge] Skipping ${repoName}: main branch is the same as default branch (${defaultBranchName})`);
+    ciLogger.info(`[Auto-Merge] Skipping ${orgRepoFullName}: main branch is the same as default branch (${defaultBranchName})`);
     return {
       outcome: {
         ...outcome,
@@ -176,7 +176,8 @@ async function processRepository(
     context,
     branch: defaultBranchData,
     cutoffTime,
-    repoName,
+    owner: org,
+    repo: repo.name,
   });
 
   if (inactivityCheck.skip && inactivityCheck.reason) {
@@ -203,9 +204,8 @@ async function processRepository(
   return await attemptMerge({
     octokit,
     defaultBranch: defaultBranchName,
-    fullRepoName: repoName,
-    repoName: repo.name,
-    org,
+    owner: org,
+    repo: repo.name,
     daysSinceLastCommit: inactivityCheck.daysSinceLastCommit,
     inactivityDays,
   });
