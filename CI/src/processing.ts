@@ -42,6 +42,7 @@ export async function processOrganization(
       url: `https://github.com/orgs/${org}`,
       reason: error instanceof Error ? error.message : String(error),
       stage: "authenticate",
+      severity: "error",
     });
     return { outcomes, errors: errors + 1, errorsDetail, aborted: false };
   }
@@ -55,6 +56,7 @@ export async function processOrganization(
       url: `https://github.com/orgs/${org}`,
       reason: "Failed to list repositories",
       stage: "list-repos",
+      severity: "error",
     });
     return { outcomes, errors: errors + 1, errorsDetail, aborted: false };
   }

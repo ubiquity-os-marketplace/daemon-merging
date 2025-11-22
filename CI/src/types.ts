@@ -15,6 +15,7 @@ export type MergeError = {
   url: string;
   reason: string;
   stage: "authenticate" | "list-repos" | "merge" | "unknown";
+  severity: "error" | "warning";
 };
 
 export type MergeOutcome =

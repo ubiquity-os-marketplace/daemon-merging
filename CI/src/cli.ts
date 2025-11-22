@@ -25,8 +25,11 @@ async function main(): Promise<void> {
   }
 
   await writeGithubSummary(result.outcomes, result.errors, result.errorsDetail);
-  if (result.errors > 0 && result.errorsDetail.every((e) => e.reason.includes("A pull request already exists for"))) {
-    // more of a warning than an error
+
+  // Check if all errors are warnings (non-fatal)
+  const hasOnlyWarnings = result.errors > 0 && result.errorsDetail.every((e) => e.severity === "warning");
+
+  if (hasOnlyWarnings) {
     process.exitCode = 0;
   } else {
     process.exitCode = 1;

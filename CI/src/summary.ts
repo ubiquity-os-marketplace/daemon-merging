@@ -39,13 +39,25 @@ export function writeGithubSummary(outcomes: MergeOutcome[], errorCount: number,
       .addBreak()
       .addHeading("Failures", 2)
       .addTable([
-        ["Scope", "Org", "Repo", "Stage", "Reason", "URL"],
-        ...errorsDetail.map((e) => [e.scope, e.org, e.repo ?? "—", e.stage, e.reason, `<a href="${e.url}">link</a>`]),
+        ["Severity", "Scope", "Org", "Repo", "Stage", "Reason", "URL"],
+        ...errorsDetail.map((e) => [
+          e.severity === "warning" ? "⚠️ Warning" : "❌ Error",
+          e.scope,
+          e.org,
+          e.repo ?? "—",
+          e.stage,
+          e.reason,
+          `<a href="${e.url}">link</a>`,
+        ]),
       ]);
 
     // Emit GitHub Annotations for quick visibility
     for (const e of errorsDetail) {
-      core.error(`${e.reason} — ${e.url}`, { title: `[${e.org}${e.repo ? "/" + e.repo : ""}] ${e.stage}` });
+      if (e.severity === "error") {
+        core.error(`${e.reason} — ${e.url}`, { title: `[${e.org}${e.repo ? "/" + e.repo : ""}] ${e.stage}` });
+      } else {
+        core.warning(`${e.reason} — ${e.url}`, { title: `[${e.org}${e.repo ? "/" + e.repo : ""}] ${e.stage}` });
+      }
     }
   }
 

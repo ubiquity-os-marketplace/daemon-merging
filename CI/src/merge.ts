@@ -38,11 +38,17 @@ export async function attemptMerge({
       defaultBranch,
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isWarning = errorMessage.includes("A pull request already exists for") || errorMessage.includes("has no history in common with");
+
     if (error instanceof Error && error.message.includes("Base does not exist")) {
       ciLogger.warn(`[Auto-Merge] ✗ Merge failed for ${owner}/${repo}: main branch does not exist`);
+    } else if (isWarning) {
+      ciLogger.warn(`[Auto-Merge] ⚠️ Merge skipped for ${owner}/${repo}: ${errorMessage}`);
     } else {
       ciLogger.error(`[Auto-Merge] Merge failed for ${owner}/${repo}:`, { e: error });
     }
+
     return {
       error: true,
       errorDetail: {
@@ -50,8 +56,9 @@ export async function attemptMerge({
         org: owner,
         repo,
         url: `https://github.com/${owner}/${repo}`,
-        reason: error instanceof Error ? error.message : String(error),
+        reason: errorMessage,
         stage: "merge",
+        severity: isWarning ? "warning" : "error",
       },
     };
   }
