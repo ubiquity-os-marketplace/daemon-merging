@@ -13,10 +13,14 @@ const cfg: Config = {
   coveragePathIgnorePatterns: ["node_modules", "mocks"],
   collectCoverage: true,
   coverageReporters: ["json", "lcov", "text", "clover", "json-summary"],
-  reporters: ["default", "jest-junit", "jest-md-dashboard"],
+  reporters: ["default", "jest-junit", ["jest-md-dashboard", { outputPath: "test-dashboard.md" }]],
   coverageDirectory: "coverage",
   testTimeout: 20000,
-  roots: ["<rootDir>", "tests"],
+  // Limit Jest to the main test suite only and avoid CI folder
+  roots: ["<rootDir>/tests"],
+  testMatch: ["<rootDir>/tests/**/*.test.ts"],
+  testPathIgnorePatterns: ["<rootDir>/CI/"],
+  modulePathIgnorePatterns: ["<rootDir>/CI/"],
   extensionsToTreatAsEsm: [".ts"],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
