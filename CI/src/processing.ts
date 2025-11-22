@@ -132,6 +132,17 @@ async function processRepository(
     };
   }
 
+  if (repo.private) {
+    ciLogger.info(`[Auto-Merge] Skipping ${orgRepoFullName}: private`);
+    return {
+      outcome: {
+        ...outcome,
+        status: "skipped",
+        reason: "Repository is private",
+      },
+    };
+  }
+
   // Get and validate default branch
   const defaultBranchData = await getDefaultBranch({
     octokit,
