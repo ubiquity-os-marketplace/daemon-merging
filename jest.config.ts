@@ -9,7 +9,7 @@ const cfg: Config = {
   coveragePathIgnorePatterns: ["node_modules", "mocks"],
   collectCoverage: true,
   coverageReporters: ["json", "lcov", "text", "clover", "json-summary"],
-  reporters: ["default", "jest-junit", "jest-md-dashboard"],
+  reporters: ["default", "jest-junit", ["jest-md-dashboard", { outputPath: "test-dashboard.md" }]],
   coverageDirectory: "coverage",
   testTimeout: 20000,
   transformIgnorePatterns: [],
@@ -18,6 +18,10 @@ const cfg: Config = {
   testMatch: ["<rootDir>/tests/**/*.test.ts"],
   testPathIgnorePatterns: ["<rootDir>/CI/"],
   modulePathIgnorePatterns: ["<rootDir>/CI/"],
+  // extensionsToTreatAsEsm: [".ts"],
+  // moduleNameMapper: {
+  //   "^(\\.{1,2}/.*)\\.js$": "$1",
+  // },
   setupFilesAfterEnv: ["dotenv/config", "<rootDir>/tests/setup.ts"],
 };
 
