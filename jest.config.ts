@@ -3,7 +3,7 @@ import type { Config } from "jest";
 const cfg: Config = {
   testEnvironment: "node",
   transform: {
-    "^.+\\.[jt]s$": ["@swc/jest", {}],
+    "^.+\\.[jt]s$": "@swc/jest",
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   coveragePathIgnorePatterns: ["node_modules", "mocks"],
@@ -18,10 +18,6 @@ const cfg: Config = {
   testMatch: ["<rootDir>/tests/**/*.test.ts"],
   testPathIgnorePatterns: ["<rootDir>/CI/"],
   modulePathIgnorePatterns: ["<rootDir>/CI/"],
-  // extensionsToTreatAsEsm: [".ts"],
-  // moduleNameMapper: {
-  //   "^(\\.{1,2}/.*)\\.js$": "$1",
-  // },
   setupFilesAfterEnv: ["dotenv/config", "<rootDir>/tests/setup.ts"],
 };
 
