@@ -149,3 +149,19 @@ The project uses a comprehensive type system built on TypeScript:
    - Monitoring updates logged
 
 This architecture ensures reliable, type-safe automated PR management with configurable rules and comprehensive status reporting.
+
+## Scheduled Auto-Merge (cron)
+
+- Purpose: Automatically merges the repository’s default branch (usually `development`) into `main` when the default branch has been inactive (no non-bot commits) for a configurable number of days.
+- Schedule: Runs weekly on Mondays at 06:00 UTC via GitHub Actions, and can also be triggered manually (`workflow_dispatch`). See `.github/workflows/auto-merge-development.yml`.
+- Scope: Processes all repositories across configured organizations.
+- Behavior:
+  - Skips active branches; only merges if inactivity threshold is met (default 90 days).
+  - If `main` does not exist, creates it from the default branch and retries the merge.
+  - On merge conflicts, opens an automated PR (`<defaultBranch> -> main`) instead of force merging.
+  - Includes a fork-safety guard to avoid operating on forks that have open PRs upstream.
+- Configuration (env/vars):
+  - `APP_ID`, `APP_PRIVATE_KEY` (GitHub App credentials) — from repository secrets.
+  - `TARGET_ORGS` (JSON array of orgs to scan) — repository variables; defaults to `["ubiquity", "ubiquity-os", "ubiquity-os-marketplace", "ubiquity-research", "devpool-directory"]`.
+  - `INACTIVITY_DAYS` (number) — repository variable; defaults to `90`.
+- Implementation: Executed by Bun via `bun run CI/src/cli.ts`, which authenticates the app, lists repos, evaluates inactivity, merges default → `main`, and writes a job summary.
