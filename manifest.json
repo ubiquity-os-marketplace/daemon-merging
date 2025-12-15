@@ -63,5 +63,5 @@
     }
   },
   "homepage_url": "https://daemon-merging-fix-action.deno.dev",
-  "short_name": "ubiquity-os-marketplace/daemon-merging@development"
+  "short_name": "ubiquity-os-marketplace/daemon-merging@fix/action-entry"
 }
