@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.0.0 (2025-12-15)
+
+
+### Features
+
+* add auto-merge workflow for development ([142510d](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/142510d7584bdd7d2c51dd1cdd0d3572447bdefc))
+* Add comprehensive tests for CLI, GitHub API, guards, and utility functions ([a6032ec](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/a6032ecee92221add2cdccc8c7a5cc1699b5a5a7))
+* add getMainBranch function and improve main branch creation logic ([305f631](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/305f631fb10bf4de1bece5b01c15d03a5f9d9c4d))
+* add support for "issues.reopened" event handling ([9301712](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/93017126f3b367d63fdcdf6f74ec687a18b4a81c))
+* enhance processRepository to skip merging if main branch matches default branch and update mock handlers for GitHub API ([aa7e41b](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/aa7e41bd22b235d850ea77fd30c9c26bcd214719))
+* implement auto-merge functionality for development branches ([558491f](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/558491f438ac8c73483e1c54ff08d27eb8071192))
+* implement branch inactivity check and merging logic, including new processing and merging modules ([87988a1](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/87988a12672967404a6e722f560ccce6d52692e0))
+* migrate to action.yml entry point ([cff3c48](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/cff3c48d17bc89b5b5591b36d1abc86ec3b7d2c6))
+* used ubiquity's knip-reporter ([e7710f4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/e7710f4195b2116f530934bff3d66717f770c410))
+* used ubiquity's knip-reporter ([cc77be6](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/cc77be6e1d4196b0514fc5f5848c0aeb01426a64))
+
+
+### Bug Fixes
+
+* adjust error handling in CLI to treat specific pull request errors as warnings and update processing return structure for skipped repositories ([49fc9c0](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/49fc9c07d30e21659f29a9fbd83258176e5bd931))
+* bumped SDK and added bot event skip in manifest.json ([b0689c9](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/b0689c90015200fb0f57274fdadbceadea14670d))
+* bumped SDK and added bot event skip in manifest.json ([5a77cc5](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/5a77cc53c61062a83bf979b05c2b71d05e5ffba4))
+* bumped SDK version ([c389dfe](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/c389dfe6bdbf7227d662e288c256f413935564b6))
+* bumped SDK version ([c732470](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/c73247082890d0136f76a0354b7477423ca96ae0))
+* cron merging ([8704a8d](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/8704a8d2c284e655afa2318d2dd7552c346f62a1))
+* introduced KV adapters for handling database operations ([0273e62](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/0273e62f73b653b966e638f3a877219d4e802920))
+* refine Jest configuration ([142510d](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/142510d7584bdd7d2c51dd1cdd0d3572447bdefc))
+* release please issue permission ([fde01ad](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/fde01ad94961b6710c05a74294e0db2c46c00d42))
+* release please issue permission ([416d28e](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/416d28e6178c1b2a8f942f17ec870106e25a1ed1))
+* the App ID and the App private key are properly used on authentication ([50fae48](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/50fae483505665dde33702d3d6e5f216124714a8))
+* the octokit instanced used for the workflow management is from the target repo ([2301d4f](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/2301d4f6b7dce669ab30074c9e82297b513ef78e))
+* workflow enable / disable with proper credentials ([7bb6a84](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/7bb6a84d61c16b705eed0c551c4e43d49eebbf58))
+* workflow for CRON and watch issues ([b1fa6a1](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/b1fa6a1a5745e552191f7e764484dd268061f102))
+
 ## [2.1.0](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.0.1...v2.1.0) (2025-07-10)
 
 
