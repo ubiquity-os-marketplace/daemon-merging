@@ -1,5 +1,3 @@
-name: "Automated Merging"
-
 on:
   workflow_dispatch:
     inputs:
@@ -27,7 +25,6 @@ on:
 
 jobs:
   compute:
-    name: "Automated Merging"
     runs-on: ubuntu-latest
     permissions: write-all
     environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'development' }}
@@ -40,10 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - run: ${{ toJSON(inputs) }}
-        shell: cat {0}
-
-      - name: Execute directive
+      - name: ${{ github.event.repository.name }}
         uses: ./
         env:
           KERNEL_PUBLIC_KEY: ${{ (endsWith(github.actor, '[bot]') && github.event.inputs.kernelPublicKey) || secrets.KERNEL_PUBLIC_KEY }}
