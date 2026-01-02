@@ -30,7 +30,7 @@ async function enforceRateLimit(): Promise<void> {
 
   if (rateProcessed >= RATE_LIMIT_MAX_ITEMS_PER_WINDOW) {
     const waitMs = RATE_LIMIT_WINDOW_MS - elapsed;
-    logger.info("Rate limit reached, waiting for reset.", {
+    logger.warn("Rate limit reached, waiting for reset.", {
       processedInWindow: rateProcessed,
       windowMs: RATE_LIMIT_WINDOW_MS,
       waitMs,
@@ -54,7 +54,7 @@ async function main() {
   const kvAdapter = await createKvDatabaseHandler();
   const repositories = await kvAdapter.getAllRepositories();
 
-  logger.info(`Loaded KV data.`, {
+  logger.ok(`Loaded KV data.`, {
     repositories: repositories.length,
   });
 
@@ -97,7 +97,7 @@ async function main() {
         });
 
         const newBody = body + `\n<!-- ${pkg.name} update ${new Date().toISOString()} -->`;
-        logger.info(`Updated body of ${url}`, { newBody, totalIssues: issueNumbers.length, issueNumber });
+        logger.ok(`Updated body of ${url}`, { newBody, totalIssues: issueNumbers.length, issueNumber });
 
         await repoOctokit.rest.issues.update({
           owner: owner,

@@ -4,10 +4,10 @@ import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Context } from "../types/index";
 
 export async function updateCronState(context: Context) {
-  context.logger.debug("Updating the cron.yml workflow state.");
+  context.logger.info("Updating the cron.yml workflow state.");
 
   if (!process.env.GITHUB_REPOSITORY) {
-    context.logger.error("Can't update the Action Workflow state as GITHUB_REPOSITORY is missing from the env.");
+    context.logger.warn("Can't update the Action Workflow state as GITHUB_REPOSITORY is missing from the env.");
     return;
   }
 
@@ -23,7 +23,7 @@ export async function updateCronState(context: Context) {
     });
     let authOctokit;
     if (!process.env.APP_ID || !process.env.APP_PRIVATE_KEY) {
-      context.logger.debug("APP_ID or APP_PRIVATE_KEY are missing from the env, will use the default Octokit instance.");
+      context.logger.warn("APP_ID or APP_PRIVATE_KEY are missing from the env, will use the default Octokit instance.");
       authOctokit = context.octokit;
     } else {
       const installation = await appOctokit.rest.apps.getRepoInstallation({

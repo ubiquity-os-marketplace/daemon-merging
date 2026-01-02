@@ -66,7 +66,7 @@ export async function isCiGreen({ octokit, logger, env }: Context, sha: string, 
     return retryAsync(
       async () => {
         const checkSuitePromises = checkSuites.check_suites.map(async (suite) => {
-          logger.debug(`Checking runs for suite ${suite.id}: ${suite.url}, and filter out ${env.workflowName}`);
+          logger.info(`Checking runs for suite ${suite.id}: ${suite.url}, and filter out ${env.workflowName}`);
           const { data: checkRuns } = await octokit.rest.checks.listForSuite({
             owner,
             repo,
@@ -83,7 +83,7 @@ export async function isCiGreen({ octokit, logger, env }: Context, sha: string, 
             return null;
           } else if (
             filteredResults.find((o) => {
-              logger.debug(`Workflow ${o.name}/${o.id} [${o.url}]: ${o.status},${o.conclusion}`);
+              logger.info(`Workflow ${o.name}/${o.id} [${o.url}]: ${o.status},${o.conclusion}`);
               return o.conclusion === "failure";
             })
           ) {
@@ -95,7 +95,7 @@ export async function isCiGreen({ octokit, logger, env }: Context, sha: string, 
       {
         until(lastResult) {
           if (lastResult === null) {
-            logger.info("Not all CI runs were complete, will retry...");
+            logger.debug("Not all CI runs were complete, will retry...");
           }
           return lastResult !== null;
         },
