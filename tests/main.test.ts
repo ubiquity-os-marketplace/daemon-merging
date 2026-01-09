@@ -26,9 +26,8 @@ beforeAll(async () => {
   server.listen();
 
   const githubHelpers = await import(githubHelpersPath);
-  jest.unstable_mockModule(githubHelpersPath, () => {
+  jest.mock(githubHelpersPath, () => {
     return {
-      __esModule: true,
       ...githubHelpers,
       mergePullRequest,
     };
