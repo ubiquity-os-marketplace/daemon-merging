@@ -62,6 +62,6 @@
       }
     }
   },
-  "homepage_url": "https://daemon-merging-development.deno.dev",
-  "short_name": "ubiquity-os-marketplace/daemon-merging@fork/ubq-testing/refactor/test-transpilation"
+  "homepage_url": "https://daemon-merging-fork-ubq-te.deno.dev",
+  "short_name": "ubiquity-os-marketplace/daemon-merging@development"
 }
