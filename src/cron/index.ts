@@ -1,9 +1,15 @@
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
+import { Value } from "@sinclair/typebox/value";
+import { ConfigurationHandler } from "@ubiquity-os/plugin-sdk/configuration";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
-import pkg from "../../package.json" with { type: "json" };
+import manifest from "../../manifest.json" with { type: "json" };
 import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
+import { updatePullRequests } from "../helpers/update-pull-requests";
+import { Context, Env } from "../types";
+import { envSchema } from "../types/env";
+import { PluginSettings, pluginSettingsSchema } from "../types/plugin-input";
 
 const RATE_LIMIT_MAX_ITEMS_PER_WINDOW = 500;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -11,6 +17,62 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 let rateWindowStart = Date.now();
 let rateProcessed = 0;
 const logger = new Logs(process.env.LOG_LEVEL ?? "info");
+
+function normalizeMultilineSecret(value: string): string {
+  return value.includes("\\n") ? value.replace(/\\n/g, "\n") : value;
+}
+
+function getAppAuth() {
+  const appId = Number(process.env.APP_ID);
+  const privateKey = normalizeMultilineSecret(process.env.APP_PRIVATE_KEY ?? "");
+
+  if (!appId || Number.isNaN(appId)) {
+    throw new Error("APP_ID is missing or invalid.");
+  }
+
+  if (!privateKey.trim()) {
+    throw new Error("APP_PRIVATE_KEY is missing.");
+  }
+
+  return { appId, privateKey };
+}
+
+async function getInstallationOctokit(appOctokit: Octokit, owner: string, repo: string) {
+  const { appId, privateKey } = getAppAuth();
+  const installation = await appOctokit.rest.apps.getRepoInstallation({
+    owner,
+    repo,
+  });
+
+  return new customOctokit({
+    authStrategy: createAppAuth,
+    auth: {
+      appId,
+      privateKey,
+      installationId: installation.data.id,
+    },
+  });
+}
+
+async function resolveRepoConfig(octokit: Context["octokit"], owner: string, repo: string): Promise<PluginSettings | null> {
+  try {
+    const handler = new ConfigurationHandler(logger, octokit);
+    const rawConfig = await handler.getSelfConfiguration(manifest, { owner, repo });
+    if (!rawConfig) {
+      return null;
+    }
+    const withDefaults = Value.Default(pluginSettingsSchema, rawConfig);
+    return Value.Decode(pluginSettingsSchema, withDefaults);
+  } catch (err) {
+    logger.error("Failed to resolve repository configuration.", { owner, repo, err });
+    return null;
+  }
+}
+
+function buildEnv(): Env {
+  const withDefaults = Value.Default(envSchema, { workflowName: process.env.WORKFLOW_NAME });
+  return Value.Decode(envSchema, withDefaults);
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -42,12 +104,12 @@ async function enforceRateLimit(): Promise<void> {
 }
 
 async function main() {
-  const octokit = new Octokit({
+  const { appId, privateKey } = getAppAuth();
+  const appOctokit = new Octokit({
     authStrategy: createAppAuth,
     auth: {
-      appId: Number(process.env.APP_ID),
-      privateKey: process.env.APP_PRIVATE_KEY,
-      installationId: process.env.APP_INSTALLATION_ID,
+      appId,
+      privateKey,
     },
   });
 
@@ -70,43 +132,44 @@ async function main() {
         issueIds: issueNumbers,
       });
 
-      const installation = await octokit.rest.apps.getRepoInstallation({
-        owner: owner,
-        repo: repo,
-      });
-
-      const repoOctokit = new customOctokit({
-        authStrategy: createAppAuth,
-        auth: {
-          appId: Number(process.env.APP_ID),
-          privateKey: process.env.APP_PRIVATE_KEY,
-          installationId: installation.data.id,
-        },
-      });
-
       const issueNumber = issueNumbers[0];
       const url = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
       try {
         await enforceRateLimit();
-        const {
-          data: { body = "" },
-        } = await repoOctokit.rest.issues.get({
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-        });
+        const repoOctokit = await getInstallationOctokit(appOctokit, owner, repo);
+        const config = await resolveRepoConfig(repoOctokit, owner, repo);
 
-        const newBody = body + `\n<!-- ${pkg.name} update ${new Date().toISOString()} -->`;
-        logger.info(`Updated body of ${url}`, { newBody, totalIssues: issueNumbers.length, issueNumber });
+        if (!config) {
+          logger.warn("No plugin configuration found for repository; skipping.", { owner, repo });
+          continue;
+        }
 
-        await repoOctokit.rest.issues.update({
-          owner: owner,
-          repo: repo,
-          issue_number: issueNumber,
-          body: newBody,
-        });
+        const context = {
+          adapters: { kv: kvAdapter },
+          octokit: repoOctokit,
+          logger,
+          env: buildEnv(),
+          config,
+          eventName: "issues.edited",
+          payload: {
+            issue: {
+              number: issueNumber,
+              html_url: url,
+              assignees: [],
+            },
+            repository: {
+              name: repo,
+              owner: {
+                login: owner,
+              },
+            },
+          },
+        } as unknown as Context;
+
+        logger.info("Processing repository updates directly.", { owner, repo, issueNumber, totalIssues: issueNumbers.length });
+        await updatePullRequests(context);
       } catch (err) {
-        logger.error("Failed to update individual issue", {
+        logger.error("Failed to process repository updates", {
           organization: owner,
           repository: repo,
           issueNumber,
