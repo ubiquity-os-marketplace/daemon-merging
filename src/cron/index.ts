@@ -1,5 +1,4 @@
 import { createAppAuth } from "@octokit/auth-app";
-import { Octokit } from "@octokit/rest";
 import { Value } from "@sinclair/typebox/value";
 import { ConfigurationHandler } from "@ubiquity-os/plugin-sdk/configuration";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
@@ -9,7 +8,7 @@ import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
 import { updatePullRequests } from "../helpers/update-pull-requests";
 import { Context, Env } from "../types";
 import { envSchema } from "../types/env";
-import { PluginSettings, pluginSettingsSchema } from "../types/plugin-input";
+import { PluginSettings } from "../types/plugin-input";
 
 const RATE_LIMIT_MAX_ITEMS_PER_WINDOW = 500;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -37,7 +36,7 @@ function getAppAuth() {
   return { appId, privateKey };
 }
 
-async function getInstallationOctokit(appOctokit: Octokit, owner: string, repo: string) {
+async function getInstallationOctokit(appOctokit: Context["octokit"], owner: string, repo: string) {
   const { appId, privateKey } = getAppAuth();
   const installation = await appOctokit.rest.apps.getRepoInstallation({
     owner,
@@ -57,12 +56,11 @@ async function getInstallationOctokit(appOctokit: Octokit, owner: string, repo: 
 async function resolveRepoConfig(octokit: Context["octokit"], owner: string, repo: string): Promise<PluginSettings | null> {
   try {
     const handler = new ConfigurationHandler(logger, octokit);
-    const rawConfig = await handler.getSelfConfiguration(manifest, { owner, repo });
-    if (!rawConfig) {
+    const parsedConfig = await handler.getSelfConfiguration(manifest, { owner, repo });
+    if (!parsedConfig) {
       return null;
     }
-    const withDefaults = Value.Default(pluginSettingsSchema, rawConfig);
-    return Value.Decode(pluginSettingsSchema, withDefaults);
+    return parsedConfig as PluginSettings;
   } catch (err) {
     logger.error("Failed to resolve repository configuration.", { owner, repo, err });
     return null;
@@ -105,7 +103,7 @@ async function enforceRateLimit(): Promise<void> {
 
 async function main() {
   const { appId, privateKey } = getAppAuth();
-  const appOctokit = new Octokit({
+  const appOctokit = new customOctokit({
     authStrategy: createAppAuth,
     auth: {
       appId,
