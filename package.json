@@ -20,7 +20,8 @@
     "start:deno": "deno serve --unstable-sloppy-imports --allow-all --unstable-kv --watch --no-clear-screen --port 4000 src/worker.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
     "test:ci": "jest --setupFiles dotenv/config --config CI/jest.config.ts --coverage",
-    "test:all": "run-s test test:ci"
+    "test:all": "run-s test test:ci",
+    "build": "tsc --noEmit"
   },
   "keywords": [
     "typescript",
