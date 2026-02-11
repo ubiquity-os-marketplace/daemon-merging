@@ -1,6 +1,6 @@
 {
   "name": "@ubiquity-os/daemon-merging",
-  "short_name": "ubiquity-os-marketplace/daemon-merging@codex/fix/manifest-build-automated-merging-automated-merging-u2",
+  "short_name": "ubiquity-os-marketplace/daemon-merging@development",
   "description": "Conditionally merge pull requests after a timeout.",
   "ubiquity:listeners": ["issues.assigned", "issues.edited", "issues.unassigned", "issues.closed", "issues.reopened"],
   "skipBotEvents": false,
