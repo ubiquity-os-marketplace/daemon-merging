@@ -1,6 +1,7 @@
 {
-  "name": "Daemon merging",
-  "description": "Automatically merge pull-requests.",
+  "name": "@ubiquity-os/daemon-merging",
+  "short_name": "ubiquity-os-marketplace/daemon-merging@feat/320-workflow-artifact-migration",
+  "description": "Conditionally merge pull requests after a timeout.",
   "ubiquity:listeners": ["issues.assigned", "issues.edited", "issues.unassigned", "issues.closed", "issues.reopened"],
   "skipBotEvents": false,
   "configuration": {
@@ -61,6 +62,5 @@
         }
       }
     }
-  },
-  "short_name": "ubiquity-os-marketplace/daemon-merging@development"
+  }
 }
