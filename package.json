@@ -15,7 +15,7 @@
     "format:cspell": "cspell **/*",
     "knip": "knip --config .github/knip.ts",
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
-    "prepare": "husky install",
+    "prepare": "bun run prepare:manifest && husky install",
     "start": "bun --port 4000 --watch --no-clear-screen src/worker.ts",
     "start:deno": "deno serve --unstable-sloppy-imports --allow-all --unstable-kv --watch --no-clear-screen --port 4000 src/worker.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
