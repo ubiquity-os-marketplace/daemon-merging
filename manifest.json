@@ -1,0 +1,89 @@
+{
+  "name": "@ubiquity-os/daemon-merging",
+  "short_name": "ubiquity-os-marketplace/daemon-merging@feat/320-workflow-artifact-migration",
+  "description": "Conditionally merge pull requests after a timeout.",
+  "ubiquity:listeners": [
+    "issues.assigned",
+    "issues.edited",
+    "issues.unassigned",
+    "issues.closed",
+    "issues.reopened"
+  ],
+  "skipBotEvents": false,
+  "configuration": {
+    "type": "object",
+    "properties": {
+      "approvalsRequired": {
+        "default": {},
+        "type": "object",
+        "properties": {
+          "collaborator": {
+            "default": 1,
+            "minimum": 1,
+            "description": "The amount of validations needed to consider a pull-request by a collaborator to be deemed eligible for merge",
+            "type": "number"
+          },
+          "contributor": {
+            "default": 2,
+            "minimum": 1,
+            "description": "The amount of validations needed to consider a pull-request by a contributor to be deemed eligible for merge",
+            "type": "number"
+          }
+        }
+      },
+      "mergeTimeout": {
+        "default": {},
+        "type": "object",
+        "properties": {
+          "collaborator": {
+            "default": "3.5 days",
+            "description": "The timespan to wait before merging a collaborator's pull-request",
+            "examples": [
+              "1 day",
+              "3.5 days"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "excludedRepos": {
+        "default": [],
+        "description": "Repositories to exclude from monitoring. Must be in the format 'owner/repo' to avoid mistakenly ignoring repositories with the same name in different organizations.",
+        "examples": [
+          "owner/repo",
+          "another-org/repo"
+        ],
+        "type": "array",
+        "items": {
+          "pattern": "^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$",
+          "minLength": 3,
+          "description": "Repository in the format 'owner/repo'",
+          "type": "string"
+        }
+      },
+      "allowedReviewerRoles": {
+        "default": [
+          "COLLABORATOR",
+          "MEMBER",
+          "OWNER"
+        ],
+        "description": "When considering a user for a task: which roles should be considered as having review authority? All others are ignored.",
+        "examples": [
+          [
+            "COLLABORATOR",
+            "MEMBER",
+            "OWNER"
+          ],
+          [
+            "MEMBER",
+            "OWNER"
+          ]
+        ],
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
