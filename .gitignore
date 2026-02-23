@@ -18,3 +18,5 @@ script.ts
 test-dashboard.md
 database/tests/*
 src/cron/db.json
+manifest.json
+dist/
