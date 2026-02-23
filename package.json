@@ -22,7 +22,7 @@
     "test:ci": "jest --setupFiles dotenv/config --config CI/jest.config.ts --coverage",
     "test:all": "run-s test test:ci",
     "build": "tsc --noEmit",
-    "prepare:manifest": "bun x @ubiquity-os/plugin-manifest-tool@main .",
+    "prepare:manifest": "bun x @ubiquity-os/plugin-manifest-tool@latest .",
     "prebuild": "bun run prepare:manifest"
   },
   "keywords": [
