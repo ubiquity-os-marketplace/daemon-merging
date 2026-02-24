@@ -15,13 +15,15 @@
     "format:cspell": "cspell **/*",
     "knip": "knip --config .github/knip.ts",
     "knip-ci": "knip --no-exit-code --reporter json --config .github/knip.ts",
-    "prepare": "husky install",
+    "prepare": "bun run prepare:manifest && husky install",
     "start": "bun --port 4000 --watch --no-clear-screen src/worker.ts",
     "start:deno": "deno serve --unstable-sloppy-imports --allow-all --unstable-kv --watch --no-clear-screen --port 4000 src/worker.ts",
     "test": "jest --setupFiles dotenv/config --coverage",
     "test:ci": "jest --setupFiles dotenv/config --config CI/jest.config.ts --coverage",
     "test:all": "run-s test test:ci",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "prepare:manifest": "MANIFEST_PATH=${MANIFEST_PATH:-manifest.json} GITHUB_WORKSPACE=${GITHUB_WORKSPACE:-.} GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-local/${npm_package_name:-plugin}} GITHUB_REF_NAME=${GITHUB_REF_NAME:-local} bunx @ubiquity-os/plugin-manifest-tool@latest",
+    "prebuild": "bun run prepare:manifest"
   },
   "keywords": [
     "typescript",
