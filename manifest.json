@@ -9,7 +9,7 @@
     "issues.closed",
     "issues.reopened"
   ],
-  "skipBotEvents": false,
+  "skipBotEvents": true,
   "configuration": {
     "type": "object",
     "properties": {
