@@ -1,10 +1,10 @@
 import { createAppAuth } from "@octokit/auth-app";
 import { Value } from "@sinclair/typebox/value";
-import { ConfigurationHandler } from "@ubiquity-os/plugin-sdk/configuration";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import manifest from "../../manifest.json" with { type: "json" };
 import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
+import { BranchAwareConfigurationHandler } from "./branch-aware-configuration-handler";
 import { updatePullRequests } from "../helpers/update-pull-requests";
 import { Context, Env } from "../types";
 import { envSchema } from "../types/env";
@@ -55,7 +55,7 @@ async function getInstallationOctokit(appOctokit: Context["octokit"], owner: str
 
 async function resolveRepoConfig(octokit: Context["octokit"], owner: string, repo: string): Promise<PluginSettings | null> {
   try {
-    const handler = new ConfigurationHandler(logger, octokit);
+    const handler = new BranchAwareConfigurationHandler(logger, octokit);
     const parsedConfig = await handler.getSelfConfiguration(manifest, { owner, repo });
     if (!parsedConfig) {
       return null;
