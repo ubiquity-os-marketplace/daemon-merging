@@ -39,7 +39,7 @@
     "@octokit/plugin-rest-endpoint-methods": "^17.0.0",
     "@octokit/rest": "^22.0.1",
     "@sinclair/typebox": "0.34.8",
-    "@ubiquity-os/plugin-sdk": "^3.8.4",
+    "@ubiquity-os/plugin-sdk": "3.12.5",
     "@ubiquity-os/ubiquity-os-logger": "1.4.0",
     "dotenv": "16.4.5",
     "ms": "2.1.3",
