@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { db } from "./db";
-import searchPullRequest from "./routes/search-pull-requests.json";
+import searchPullRequest from "./routes/search-pull-requests.json" with { type: "json" };
 
 /**
  * Intercepts the routes and returns a custom payload

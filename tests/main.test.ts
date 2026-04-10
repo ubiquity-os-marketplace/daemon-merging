@@ -9,7 +9,7 @@ import { KV_PREFIX } from "../src/adapters/kv-database-handler";
 import { Context, pluginSettingsSchema } from "../src/types/index";
 import { db } from "./__mocks__/db";
 import { server } from "./__mocks__/node";
-import seed from "./__mocks__/seed.json";
+import seed from "./__mocks__/seed.json" with { type: "json" };
 
 const mergePullRequest = jest.fn();
 
