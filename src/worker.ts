@@ -2,6 +2,7 @@ import { createPlugin } from "@ubiquity-os/plugin-sdk";
 import { Manifest, resolveRuntimeManifest } from "@ubiquity-os/plugin-sdk/manifest";
 import { LOG_LEVEL } from "@ubiquity-os/ubiquity-os-logger";
 import { ExecutionContext } from "hono";
+import { env } from "hono/adapter";
 import manifest from "../manifest.json" with { type: "json" };
 import { plugin } from "./plugin";
 import { Env, envSchema, SupportedEvents } from "./types/index";
@@ -16,12 +17,13 @@ function buildRuntimeManifest(request: Request) {
 }
 
 export default {
-  async fetch(request: Request, env: Env, executionCtx?: ExecutionContext) {
+  async fetch(request: Request, serverInfo: Deno.ServeHandlerInfo, executionCtx?: ExecutionContext) {
     const runtimeManifest = buildRuntimeManifest(request);
     if (new URL(request.url).pathname === "/manifest.json") {
       return Response.json(runtimeManifest);
     }
 
+    const environment = env<Env>(request as never);
     const app = createPlugin<PluginSettings, Env, null, SupportedEvents>(
       (context) => {
         return plugin(context);
@@ -30,13 +32,13 @@ export default {
       {
         envSchema: envSchema,
         settingsSchema: pluginSettingsSchema,
-        logLevel: process.env.LOG_LEVEL || LOG_LEVEL.INFO,
+        logLevel: environment.LOG_LEVEL || LOG_LEVEL.INFO,
         postCommentOnError: false,
-        kernelPublicKey: process.env.KERNEL_PUBLIC_KEY,
-        bypassSignatureVerification: process.env.NODE_ENV === "local",
+        kernelPublicKey: environment.KERNEL_PUBLIC_KEY,
+        bypassSignatureVerification: environment.NODE_ENV === "local",
       }
     );
 
-    return app.fetch(request, env, executionCtx);
+    return app.fetch(request, serverInfo, executionCtx);
   },
 };
