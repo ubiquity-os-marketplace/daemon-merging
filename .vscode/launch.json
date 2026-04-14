@@ -6,17 +6,7 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "deno",
-      "runtimeArgs": [
-        "serve",
-        "--inspect-wait",
-        "--unstable-sloppy-imports",
-        "--allow-all",
-        "--watch",
-        "--no-clear-screen",
-        "--port",
-        "4000",
-        "src/worker.ts"
-      ],
+      "runtimeArgs": ["serve", "--inspect-wait", "--unstable-sloppy-imports", "--allow-all", "--watch", "--no-clear-screen", "--port", "4000", "src/worker.ts"],
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal",
