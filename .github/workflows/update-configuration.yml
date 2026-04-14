@@ -149,7 +149,7 @@ jobs:
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 
   ensure-deno-resources:
-    name: "Ensure Deno App And KV"
+    name: "Ensure Deno App And Postgres"
     needs: resolve-context
     if: ${{ needs.resolve-context.outputs.deno_action == 'provision' && needs.resolve-context.outputs.is_tag_ref != 'true' && needs.resolve-context.outputs.is_dist_ref != 'true' }}
     runs-on: ubuntu-latest
@@ -276,7 +276,6 @@ jobs:
                 install: "deno install",
                 build: `deno x -y @ubiquity-os/plugin-manifest-tool@latest --repository ${repository} --production-branch main`,
                 predeploy: "deno install",
-                unstable: ["kv"],
                 runtime: {
                   type: "dynamic",
                   entrypoint,
@@ -313,19 +312,19 @@ jobs:
           }
           '
 
-      - name: Ensure Deno KV database
+      - name: Ensure Deno Prisma database
         shell: bash
         env:
           NO_COLOR: "1"
           DENO_API_TOKEN: ${{ secrets.DENO_2_DEPLOY_TOKEN || secrets.DENO_DEPLOY_TOKEN }}
-          KV_NAME: ${{ github.event.repository.name }}
+          DB_NAME: ${{ format('{0}-postgres', github.event.repository.name) }}
           APP_SLUG: ${{ steps.deno_context.outputs.app_slug }}
           ORGANIZATION_SLUG: ${{ steps.deno_context.outputs.organization_slug }}
         run: |
           set -euo pipefail
 
-          if [[ -z "$KV_NAME" ]]; then
-            echo "::error::KV_NAME is required."
+          if [[ -z "$DB_NAME" ]]; then
+            echo "::error::DB_NAME is required."
             exit 1
           fi
 
@@ -340,7 +339,7 @@ jobs:
           fi
 
           set +e
-          database_list_output="$(deno deploy database list "$KV_NAME" --org "$ORGANIZATION_SLUG" --token "$DENO_API_TOKEN" 2>&1)"
+          database_list_output="$(deno deploy database list "$DB_NAME" --org "$ORGANIZATION_SLUG" --token "$DENO_API_TOKEN" 2>&1)"
           database_list_status=$?
           set -e
 
@@ -349,20 +348,20 @@ jobs:
             exit $database_list_status
           fi
 
-          if printf '%s\n' "$database_list_output" | awk -v name="$KV_NAME" '$1 == name { found=1 } END { exit found ? 0 : 1 }'; then
-            echo "::notice::Deno KV database '$KV_NAME' already exists."
+          if printf '%s\n' "$database_list_output" | awk -v name="$DB_NAME" '$1 == name { found=1 } END { exit found ? 0 : 1 }'; then
+            echo "::notice::Deno Prisma database '$DB_NAME' already exists."
           else
-            deno deploy database provision "$KV_NAME" --kind denokv --org "$ORGANIZATION_SLUG" --token "$DENO_API_TOKEN"
+            deno deploy database provision "$DB_NAME" --kind prisma --region us-east-1 --org "$ORGANIZATION_SLUG" --token "$DENO_API_TOKEN"
           fi
 
           set +e
-          assign_output="$(deno deploy database assign "$KV_NAME" --app "$APP_SLUG" --org "$ORGANIZATION_SLUG" --token "$DENO_API_TOKEN" 2>&1)"
+          assign_output="$(deno deploy database assign "$DB_NAME" --app "$APP_SLUG" --org "$ORGANIZATION_SLUG" --token "$DENO_API_TOKEN" 2>&1)"
           assign_status=$?
           set -e
 
           if [[ $assign_status -ne 0 ]]; then
-            if printf '%s\n' "$assign_output" | tr '[:upper:]' '[:lower:]' | grep -Eq 'already (assigned|attached|linked)|already has .*deno kv database assigned'; then
-              echo "::notice::Deno KV database '$KV_NAME' is already assigned to '$APP_SLUG'."
+            if printf '%s\n' "$assign_output" | tr '[:upper:]' '[:lower:]' | grep -Eq 'already (assigned|attached|linked)|already has .*database assigned'; then
+              echo "::notice::Deno Prisma database '$DB_NAME' is already assigned to '$APP_SLUG'."
             else
               printf '%s\n' "$assign_output"
               exit $assign_status

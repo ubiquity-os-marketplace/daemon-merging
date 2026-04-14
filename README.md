@@ -116,6 +116,7 @@ The project uses a comprehensive type system built on TypeScript:
 - Runs in GitHub Actions environment
 - Node.js compatibility mode
 - TypeBox for runtime type validation
+- Postgres-backed issue state via `DATABASE_URL`
 
 ### Data Flow
 

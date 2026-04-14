@@ -42,14 +42,14 @@ export async function updatePullRequests(context: Context) {
     const isExcluded = (context.config.excludedRepos || []).includes(repoFullName);
 
     if (isExcluded) {
-      logger.info(`Issue ${issueNumber} is in an excluded repository, skipping KV registration.`, {
+      logger.info(`Issue ${issueNumber} is in an excluded repository, skipping issue registration.`, {
         repoFullName,
         issueUrl: payload.issue.html_url,
         eventName,
       });
       return;
     }
-    await context.adapters.kv.addIssue(payload.issue.html_url);
+    await context.adapters.issueStore.addIssue(payload.issue.html_url);
     logger.info(`Issue ${issueNumber} had been registered in the DB.`, { url: payload.issue.html_url, eventName });
     return;
   } else if (eventName === "issues.unassigned" || eventName === "issues.closed") {
@@ -57,7 +57,7 @@ export async function updatePullRequests(context: Context) {
       logger.info(`Issue ${issueNumber} still has assignees, nothing to do.`);
       return;
     }
-    await context.adapters.kv.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
+    await context.adapters.issueStore.removeIssueByNumber(context.payload.repository.owner.login, context.payload.repository.name, issueNumber);
     logger.info(`Issue ${issueNumber} had been removed from the DB.`, { url: payload.issue.html_url });
     return;
   }

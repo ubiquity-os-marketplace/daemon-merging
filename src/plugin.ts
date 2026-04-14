@@ -8,9 +8,14 @@ import { Context } from "./types/index";
  * How a worker executes the plugin.
  */
 export async function plugin(context: BasicContext) {
-  const augmentedContext = { ...context, adapters: await createAdapters() } as Context;
+  const adapters = await createAdapters();
+  const augmentedContext = { ...context, adapters } as Context;
 
-  context.logger.info("Will exclude the following repos", { ...augmentedContext.config.excludedRepos });
-  await updatePullRequests(augmentedContext);
-  await updateCronState(augmentedContext);
+  try {
+    context.logger.info("Will exclude the following repos", { ...augmentedContext.config.excludedRepos });
+    await updatePullRequests(augmentedContext);
+    await updateCronState(augmentedContext);
+  } finally {
+    await adapters.close();
+  }
 }

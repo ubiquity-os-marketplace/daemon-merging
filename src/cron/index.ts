@@ -3,7 +3,7 @@ import { Value } from "@sinclair/typebox/value";
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import manifest from "../../manifest.json" with { type: "json" };
-import { createKvDatabaseHandler } from "../adapters/kv-database-handler";
+import { createAdapters } from "../adapters";
 import { BranchAwareConfigurationHandler } from "./branch-aware-configuration-handler";
 import { updatePullRequests } from "../helpers/update-pull-requests";
 import { Context, Env } from "../types";
@@ -111,81 +111,89 @@ async function main() {
     },
   });
 
-  const kvAdapter = await createKvDatabaseHandler();
-  const repositories = await kvAdapter.getAllRepositories();
+  const adapters = await createAdapters();
 
-  logger.info(`Loaded KV data.`, {
-    repositories: repositories.length,
-  });
+  try {
+    const repositories = await adapters.issueStore.getAllRepositories();
 
-  for (const { owner, repo, issueNumbers } of repositories) {
-    if (issueNumbers.length === 0) {
-      continue;
-    }
+    logger.info(`Loaded tracked issue data.`, {
+      repositories: repositories.length,
+    });
 
-    try {
-      logger.info(`Triggering update`, {
-        organization: owner,
-        repository: repo,
-        issueIds: issueNumbers,
-      });
+    for (const { owner, repo, issueNumbers } of repositories) {
+      if (issueNumbers.length === 0) {
+        continue;
+      }
 
-      const issueNumber = issueNumbers[0];
-      const url = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
       try {
-        await enforceRateLimit();
-        const repoOctokit = await getInstallationOctokit(appOctokit, owner, repo);
-        const config = await resolveRepoConfig(repoOctokit, owner, repo);
-
-        if (!config) {
-          logger.warn("No plugin configuration found for repository; skipping.", { owner, repo });
-          continue;
-        }
-
-        const context = {
-          adapters: { kv: kvAdapter },
-          octokit: repoOctokit,
-          logger,
-          env: buildEnv(),
-          config,
-          eventName: "issues.edited",
-          payload: {
-            issue: {
-              number: issueNumber,
-              html_url: url,
-              assignees: [],
-            },
-            repository: {
-              name: repo,
-              owner: {
-                login: owner,
-              },
-            },
-          },
-        } as unknown as Context;
-
-        logger.info("Processing repository updates directly.", { owner, repo, issueNumber, totalIssues: issueNumbers.length });
-        await updatePullRequests(context);
-      } catch (err) {
-        logger.error("Failed to process repository updates", {
+        logger.info(`Triggering update`, {
           organization: owner,
           repository: repo,
-          issueNumber,
-          url,
-          err,
+          issueIds: issueNumbers,
         });
-      } finally {
-        rateProcessed++;
+
+        const issueNumber = issueNumbers[0];
+        const url = `https://github.com/${owner}/${repo}/issues/${issueNumber}`;
+        try {
+          await enforceRateLimit();
+          const repoOctokit = await getInstallationOctokit(appOctokit, owner, repo);
+          const config = await resolveRepoConfig(repoOctokit, owner, repo);
+
+          if (!config) {
+            logger.warn("No plugin configuration found for repository; skipping.", { owner, repo });
+            continue;
+          }
+
+          const context = {
+            adapters,
+            octokit: repoOctokit,
+            logger,
+            env: buildEnv(),
+            config,
+            eventName: "issues.edited",
+            payload: {
+              issue: {
+                number: issueNumber,
+                html_url: url,
+                assignees: [],
+              },
+              repository: {
+                name: repo,
+                owner: {
+                  login: owner,
+                },
+              },
+            },
+          } as unknown as Context;
+
+          logger.info("Processing repository updates directly.", { owner, repo, issueNumber, totalIssues: issueNumbers.length });
+          await updatePullRequests(context);
+        } catch (err) {
+          logger.error("Failed to process repository updates", {
+            organization: owner,
+            repository: repo,
+            issueNumber,
+            url,
+            err,
+          });
+        } finally {
+          rateProcessed++;
+        }
+      } catch (e) {
+        logger.error("Failed to process repository", {
+          owner,
+          repo,
+          issueNumbers,
+          e,
+        });
       }
-    } catch (e) {
-      logger.error("Failed to process repository", {
-        owner,
-        repo,
-        issueNumbers,
-        e,
-      });
     }
+  } finally {
+    await adapters.close();
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  logger.error("Cron run failed.", { error });
+  Deno.exit(1);
+});
