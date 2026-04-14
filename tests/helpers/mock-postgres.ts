@@ -76,6 +76,10 @@ function runQuery(query: string, values: unknown[]): unknown[] {
     return [];
   }
 
+  if (query === "begin" || query === "commit" || query === "rollback") {
+    return [];
+  }
+
   if (query.startsWith("select issue_number from tracked_issues")) {
     const [owner, repo] = values as [string, string];
     return listIssueNumbers(owner, repo).map((issueNumber) => ({ issue_number: issueNumber }));

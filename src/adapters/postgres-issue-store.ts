@@ -91,8 +91,30 @@ export class PostgresIssueStore implements IssueStore {
       return;
     }
 
-    await this.removeIssue(currentUrl);
-    await this.addIssue(newUrl);
+    const currentIssue = parseGitHubUrl(currentUrl);
+    const nextIssue = parseGitHubUrl(newUrl);
+
+    await this._withClient(async (client) => {
+      await client.queryObject`BEGIN`;
+
+      try {
+        await client.queryObject`
+          DELETE FROM tracked_issues
+          WHERE owner = ${currentIssue.owner} AND repo = ${currentIssue.repo} AND issue_number = ${currentIssue.issue_number}
+        `;
+
+        await client.queryObject`
+          INSERT INTO tracked_issues (owner, repo, issue_number)
+          VALUES (${nextIssue.owner}, ${nextIssue.repo}, ${nextIssue.issue_number})
+          ON CONFLICT (owner, repo, issue_number) DO NOTHING
+        `;
+
+        await client.queryObject`COMMIT`;
+      } catch (error) {
+        await client.queryObject`ROLLBACK`;
+        throw error;
+      }
+    });
   }
 
   async getAllRepositories(): Promise<TrackedRepository[]> {

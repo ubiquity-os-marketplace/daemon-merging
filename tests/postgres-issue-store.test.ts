@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
+import { beforeEach, describe, expect, it } from "@jest/globals";
 import { createPostgresIssueStore } from "../src/adapters/postgres-issue-store";
 import { resetMockPostgres } from "./helpers/mock-postgres";
 
@@ -11,11 +11,7 @@ describe("Postgres issue store", () => {
     resetMockPostgres();
   });
 
-  afterEach(() => {
-    resetMockPostgres();
-  });
-
-  it("adds issues idempotently", async () => {
+  it("adds issues without duplicating rows", async () => {
     const issueStore = await createPostgresIssueStore();
 
     try {
