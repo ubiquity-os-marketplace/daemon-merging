@@ -117,6 +117,8 @@ The project uses a comprehensive type system built on TypeScript:
 - Node.js compatibility mode
 - TypeBox for runtime type validation
 - Postgres-backed issue state via `DATABASE_URL`
+- Deno app lifecycle is managed by `ubiquity-os/deno-deploy@main`
+- Prisma DB provisioning only ensures the backing database exists; `DATABASE_URL` stays in the GitHub environment
 
 ### Data Flow
 
