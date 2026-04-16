@@ -4,23 +4,15 @@ import { Value } from "@sinclair/typebox/value";
 import { customOctokit as Octokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Logs } from "@ubiquity-os/ubiquity-os-logger";
 import { http, HttpResponse } from "msw";
+import { createPostgresIssueStore } from "../src/adapters/postgres-issue-store";
 import * as githubHelpers from "../src/helpers/github";
-import { KV_PREFIX } from "../src/adapters/kv-database-handler";
 import { Context, pluginSettingsSchema } from "../src/types/index";
 import { db } from "./__mocks__/db";
+import { resetMockPostgres } from "./helpers/mock-postgres";
 import { server } from "./__mocks__/node";
 import seed from "./__mocks__/seed.json" with { type: "json" };
 
 const mergePullRequest = jest.fn();
-
-type KvMock = {
-  _data: Map<string, unknown>;
-  get(key: string[]): Promise<{ value: unknown | null }>;
-  set(key: string[], value: unknown): Promise<void>;
-  delete(key: string[]): Promise<void>;
-  list(options: { prefix: string[] }): AsyncIterable<{ key: string[]; value: unknown }>;
-  close(): void;
-};
 
 beforeAll(async () => {
   server.listen();
@@ -46,6 +38,7 @@ describe("Action tests", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     jest.resetModules();
+    resetMockPostgres();
     drop(db);
     for (const table of Object.keys(seed)) {
       const tableName = table as keyof typeof seed;
@@ -82,10 +75,7 @@ describe("Action tests", () => {
     expect(mergePullRequest).not.toHaveBeenCalled();
   });
 
-  it("Should register a reopened issue in KV", async () => {
-    const kv = (await Deno.openKv()) as unknown as KvMock;
-    kv._data.clear();
-
+  it("Should register a reopened issue in Postgres", async () => {
     const plugin = (await import("../src/plugin")).plugin;
     const baseContext = createContext({ repos: { monitor: [monitor], ignore: [] } });
 
@@ -107,10 +97,9 @@ describe("Action tests", () => {
 
     await expect(plugin(context)).resolves.toEqual(undefined);
 
-    const { value } = await kv.get([KV_PREFIX, owner, repo]);
-    expect(value).toEqual([issueNumber]);
-
-    kv._data.clear();
+    const issueStore = await createPostgresIssueStore();
+    await expect(issueStore.getIssueNumbers(owner, repo)).resolves.toEqual([issueNumber]);
+    await issueStore.close();
   });
 
   it("Should close a PR that is past the threshold", async () => {

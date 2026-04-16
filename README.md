@@ -116,6 +116,11 @@ The project uses a comprehensive type system built on TypeScript:
 - Runs in GitHub Actions environment
 - Node.js compatibility mode
 - TypeBox for runtime type validation
+- Postgres-backed issue state via `DATABASE_URL`
+- Deno app lifecycle is managed by `ubiquity-os/deno-deploy@main`
+- Prisma DB provisioning only ensures the shared `ubiquity-os-postgres` database exists; `DATABASE_URL` stays in the GitHub environment
+- Collision avoidance inside the shared database is handled by project-specific tables.
+- This repo intentionally uses the `daemon_merging_*` table namespace.
 
 ### Data Flow
 
