@@ -28,7 +28,7 @@ export class PostgresIssueStore implements IssueStore {
   async initialize(): Promise<void> {
     await this._withClient(async (client) => {
       await client.queryObject`
-        CREATE TABLE IF NOT EXISTS tracked_issues (
+        CREATE TABLE IF NOT EXISTS daemon_merging_tracked_issues (
           owner TEXT NOT NULL,
           repo TEXT NOT NULL,
           issue_number INTEGER NOT NULL,
@@ -38,8 +38,8 @@ export class PostgresIssueStore implements IssueStore {
       `;
 
       await client.queryObject`
-        CREATE INDEX IF NOT EXISTS tracked_issues_owner_repo_idx
-        ON tracked_issues (owner, repo)
+        CREATE INDEX IF NOT EXISTS daemon_merging_tracked_issues_owner_repo_idx
+        ON daemon_merging_tracked_issues (owner, repo)
       `;
     });
   }
@@ -49,7 +49,7 @@ export class PostgresIssueStore implements IssueStore {
       (client) =>
         client.queryObject<{ issue_number: number }>`
         SELECT issue_number
-        FROM tracked_issues
+        FROM daemon_merging_tracked_issues
         WHERE owner = ${owner} AND repo = ${repo}
         ORDER BY issue_number
       `
@@ -64,7 +64,7 @@ export class PostgresIssueStore implements IssueStore {
     await this._withClient(
       (client) =>
         client.queryObject`
-        INSERT INTO tracked_issues (owner, repo, issue_number)
+        INSERT INTO daemon_merging_tracked_issues (owner, repo, issue_number)
         VALUES (${owner}, ${repo}, ${issueNumber})
         ON CONFLICT (owner, repo, issue_number) DO NOTHING
       `
@@ -80,7 +80,7 @@ export class PostgresIssueStore implements IssueStore {
     await this._withClient(
       (client) =>
         client.queryObject`
-        DELETE FROM tracked_issues
+        DELETE FROM daemon_merging_tracked_issues
         WHERE owner = ${owner} AND repo = ${repo} AND issue_number = ${issueNumber}
       `
     );
@@ -99,12 +99,12 @@ export class PostgresIssueStore implements IssueStore {
 
       try {
         await client.queryObject`
-          DELETE FROM tracked_issues
+          DELETE FROM daemon_merging_tracked_issues
           WHERE owner = ${currentIssue.owner} AND repo = ${currentIssue.repo} AND issue_number = ${currentIssue.issue_number}
         `;
 
         await client.queryObject`
-          INSERT INTO tracked_issues (owner, repo, issue_number)
+          INSERT INTO daemon_merging_tracked_issues (owner, repo, issue_number)
           VALUES (${nextIssue.owner}, ${nextIssue.repo}, ${nextIssue.issue_number})
           ON CONFLICT (owner, repo, issue_number) DO NOTHING
         `;
@@ -125,7 +125,7 @@ export class PostgresIssueStore implements IssueStore {
           owner,
           repo,
           array_agg(issue_number ORDER BY issue_number) AS issue_numbers
-        FROM tracked_issues
+        FROM daemon_merging_tracked_issues
         GROUP BY owner, repo
         ORDER BY owner, repo
       `
@@ -142,7 +142,7 @@ export class PostgresIssueStore implements IssueStore {
     const result = await this._withClient(
       (client) =>
         client.queryObject<{ has_data: boolean }>`
-        SELECT EXISTS (SELECT 1 FROM tracked_issues) AS has_data
+        SELECT EXISTS (SELECT 1 FROM daemon_merging_tracked_issues) AS has_data
       `
     );
 
