@@ -151,7 +151,7 @@ jobs:
   ensure-deno-database:
     name: "Ensure Deno Prisma Database"
     needs: resolve-context
-    if: ${{ needs.resolve-context.outputs.deno_action == 'provision' && needs.resolve-context.outputs.is_tag_ref != 'true' && needs.resolve-context.outputs.is_dist_ref != 'true' }}
+    if: ${{ needs.resolve-context.outputs.should_run_deno == 'true' && needs.resolve-context.outputs.deno_action == 'provision' }}
     runs-on: ubuntu-latest
     permissions: read-all
     environment: ${{ needs.resolve-context.outputs.deno_environment }}
@@ -173,6 +173,11 @@ jobs:
 
           if [[ -z "$DB_NAME" ]]; then
             echo "::error::DB_NAME is required."
+            exit 1
+          fi
+
+          if [[ -z "$DENO_API_TOKEN" ]]; then
+            echo "::error::DENO_API_TOKEN (or DENO_DEPLOY_TOKEN fallback) is required."
             exit 1
           fi
 

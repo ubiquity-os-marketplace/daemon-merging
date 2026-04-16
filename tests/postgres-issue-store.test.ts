@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it } from "@jest/globals";
-import { createPostgresIssueStore } from "../src/adapters/postgres-issue-store";
-import { resetMockPostgres } from "./helpers/mock-postgres";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import * as postgresDriver from "../src/adapters/postgres-driver";
+import { PostgresClient, PostgresPool } from "../src/adapters/postgres-driver";
+import { createPostgresIssueStore, PostgresIssueStore } from "../src/adapters/postgres-issue-store";
+import { failMockPostgresQueryOnce, resetMockPostgres } from "./helpers/mock-postgres";
 
 const trackedIssueUrl = "https://github.com/ubiquity-os-marketplace/daemon-merging/issues/42";
 const trackedIssueOwner = "ubiquity-os-marketplace";
@@ -75,6 +77,43 @@ describe("Postgres issue store", () => {
       await expect(issueStore.hasData()).resolves.toBe(true);
     } finally {
       await issueStore.close();
+    }
+  });
+
+  it("rolls back updateIssue changes when the insert fails", async () => {
+    const issueStore = await createPostgresIssueStore();
+
+    try {
+      await issueStore.addIssue(trackedIssueUrl);
+      failMockPostgresQueryOnce("insert into daemon_merging_tracked_issues", new Error("insert failed"));
+
+      await expect(issueStore.updateIssue(trackedIssueUrl, "https://github.com/ubiquity-os-marketplace/daemon-merging/issues/43")).rejects.toThrow(
+        "insert failed"
+      );
+
+      await expect(issueStore.getIssueNumbers(trackedIssueOwner, trackedIssueRepo)).resolves.toEqual([42]);
+    } finally {
+      await issueStore.close();
+    }
+  });
+
+  it("closes the pool if initialization fails", async () => {
+    const end = jest.fn<() => Promise<void>>().mockResolvedValue();
+    const pool: PostgresPool = {
+      connect: jest.fn(async () => {
+        throw new Error("connect should not be called");
+      }) as unknown as () => Promise<PostgresClient>,
+      end,
+    };
+    const createPoolSpy = jest.spyOn(postgresDriver, "createPostgresPool").mockResolvedValue(pool);
+    const initializeSpy = jest.spyOn(PostgresIssueStore.prototype, "initialize").mockRejectedValueOnce(new Error("initialize failed"));
+
+    try {
+      await expect(createPostgresIssueStore()).rejects.toThrow("initialize failed");
+      expect(end).toHaveBeenCalledTimes(1);
+    } finally {
+      initializeSpy.mockRestore();
+      createPoolSpy.mockRestore();
     }
   });
 });

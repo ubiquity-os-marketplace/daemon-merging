@@ -7,9 +7,15 @@ type TrackedIssue = {
 export const mockDatabaseUrl = "postgres://test-user:test-password@test-host:5432/test-db?sslmode=require";
 
 const trackedIssues = new Map<string, Set<number>>();
+let transactionSnapshot: Map<string, Set<number>> | null = null;
+let nextQueryFailure: { matcher: string; error: Error } | null = null;
 
 function getRepositoryKey(owner: string, repo: string): string {
   return `${owner}/${repo}`;
+}
+
+function cloneTrackedIssues(source: Map<string, Set<number>>): Map<string, Set<number>> {
+  return new Map([...source.entries()].map(([key, issueNumbers]) => [key, new Set(issueNumbers)]));
 }
 
 function upsertTrackedIssue({ owner, repo, issueNumber }: TrackedIssue): void {
@@ -42,6 +48,15 @@ function listIssueNumbers(owner: string, repo: string): number[] {
 
 export function resetMockPostgres(): void {
   trackedIssues.clear();
+  transactionSnapshot = null;
+  nextQueryFailure = null;
+}
+
+export function failMockPostgresQueryOnce(matcher: string, error = new Error("Mock Postgres query failed")): void {
+  nextQueryFailure = {
+    matcher: matcher.trim().toLowerCase(),
+    error,
+  };
 }
 
 function getAllRepositories() {
@@ -68,6 +83,12 @@ function normalizeQuery(text: string): string {
 }
 
 function runQuery(query: string, values: unknown[]): unknown[] {
+  if (nextQueryFailure && query.startsWith(nextQueryFailure.matcher)) {
+    const failure = nextQueryFailure;
+    nextQueryFailure = null;
+    throw failure.error;
+  }
+
   if (query.startsWith("create table if not exists daemon_merging_tracked_issues")) {
     return [];
   }
@@ -76,7 +97,24 @@ function runQuery(query: string, values: unknown[]): unknown[] {
     return [];
   }
 
-  if (query === "begin" || query === "commit" || query === "rollback") {
+  if (query === "begin") {
+    transactionSnapshot = cloneTrackedIssues(trackedIssues);
+    return [];
+  }
+
+  if (query === "commit") {
+    transactionSnapshot = null;
+    return [];
+  }
+
+  if (query === "rollback") {
+    if (transactionSnapshot) {
+      trackedIssues.clear();
+      for (const [key, issueNumbers] of transactionSnapshot.entries()) {
+        trackedIssues.set(key, new Set(issueNumbers));
+      }
+    }
+    transactionSnapshot = null;
     return [];
   }
 

@@ -176,7 +176,12 @@ function getDatabaseUrl(): string {
 
 export async function createPostgresIssueStore(): Promise<PostgresIssueStore> {
   const pool = await createPostgresPool(getDatabaseUrl());
-  const issueStore = new PostgresIssueStore(pool);
-  await issueStore.initialize();
-  return issueStore;
+  try {
+    const issueStore = new PostgresIssueStore(pool);
+    await issueStore.initialize();
+    return issueStore;
+  } catch (error) {
+    await pool.end();
+    throw error;
+  }
 }
