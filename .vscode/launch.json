@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Deno Serve: Worker (Watch)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": ["serve", "--inspect-wait", "--unstable-sloppy-imports", "--allow-all", "--watch", "--no-clear-screen", "--port", "4000", "src/worker.ts"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "outputCapture": "std",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "ngrok: webhook tunnel",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "ngrok http --domain=comic-bee-miserably.ngrok-free.app 4000",
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Worker + ngrok",
+      "configurations": ["Deno Serve: Worker (Watch)", "ngrok: webhook tunnel"],
+      "stopAll": true
+    }
+  ]
+}

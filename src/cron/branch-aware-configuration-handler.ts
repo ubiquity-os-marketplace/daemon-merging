@@ -1,6 +1,6 @@
 import { ConfigurationHandler } from "@ubiquity-os/plugin-sdk/configuration";
 
-type GitHubPlugin = Parameters<ConfigurationHandler["getManifest"]>[0];
+type GitHubPlugin = Exclude<Parameters<ConfigurationHandler["getManifest"]>[0], string>;
 
 export function getRefCandidates(ref?: string): (string | undefined)[] {
   if (!ref) {
