@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.3.0](https://github.com/ubiquity-os-marketplace/daemon-merging/compare/v2.2.0...v2.3.0) (2026-04-21)
+
+
+### Features
+
+* migrate issue tracking from Deno KV to Postgres ([50bf6d8](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/50bf6d8fee0af852f81141141387234828b6d384))
+* migrate issue tracking store to postgres ([b6d9a4d](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/b6d9a4d424f993a12762d2defb7df62d6e07ef59))
+
+
+### Bug Fixes
+
+* add json import attributes for deno ([72d91f0](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/72d91f006c7e3d015bd98eee65a8b925b5c9a6a2))
+* address non-transitive CI failures ([68c95bc](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/68c95bc1c6684a0e41a261e5c0d20a1f03c476cc))
+* address postgres review feedback and ci ([67c6b54](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/67c6b54758a24a35f79ef4385ab3b549feb38f3f))
+* align deno runtime env handling ([5a97019](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/5a970199fe4bbbcf9d674ed6c39f1b0dfe6f018d))
+* bump plugin-sdk for runtime manifest refs ([ca359f4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/ca359f48af12bf6f1de1549099b00fcb6ed5b534))
+* cast runtime log level ([9fc60c4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/9fc60c467721baab7a7a668edac72a8148d8e4a2))
+* **ci:** gate deno db provisioning ([cc7f5d4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/cc7f5d41dedf45ad0887ec6fb66db79cbe6dbc02))
+* fall back to legacy deno token ([c01227c](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/c01227c2d836703a60ef985276d8e1cac30caa99))
+* format vscode launch config ([3bb8d74](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/3bb8d74ecfec73355cc1bfa438e92b766a5f5ced))
+* narrow branch-aware manifest plugin type ([2050612](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/20506124899ee9251a155952509195067e83313b))
+* use deno 2 deploy token ([37fd1a4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/37fd1a46d4ff9816dc70097b76a769332f91131f))
+* widen runtime env typing ([c5c99e4](https://github.com/ubiquity-os-marketplace/daemon-merging/commit/c5c99e4ac7077b761412f20919fac43934d93674))
+
 ## 2.2.0 (2026-03-23)
 
 
